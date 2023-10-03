@@ -18,9 +18,9 @@ Dive into a collection of projects that span various domains of data science and
 
 ## 🤖 **Machine Learning Projects**
 
-- 📜 **BERT Text Tokenization**: Dive deep into text processing with BERT.
-- 🎬 **Sentiment Analysis**: Detect negative reviews in classic films.
-- 🧑 **Age Estimation with ResNet50**: Fine-tuned age predictions using ResNet50.
+1. 📜 **BERT Text Tokenization**: Dive deep into text processing with BERT.
+2. 🎬 **Sentiment Analysis**: Detect negative reviews in classic films.
+3. 🧑 **Age Estimation with ResNet50**: Fine-tuned age predictions using ResNet50.
 
 ### **Additional Code Demos**:
 - 👚 **Clothing Classification**: Identify and categorize clothing items.
