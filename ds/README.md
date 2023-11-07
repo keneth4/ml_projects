@@ -7,3 +7,4 @@
 5. 🔒 **Insurance Service & Data Protection**: Make services safe and efficient.
 6. 🚗 **Second-Hand Car Price Estimation**: Get the best price for your ride.
 7. ✈️ **Airport Taxi Demand Forecasting**: No more waiting in queues.
+8. 📲 **Prediction of Churn for a Telecomm Company**: Predict and prevent customer turnover.
