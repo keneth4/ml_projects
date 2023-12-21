@@ -1,10 +1,5 @@
-## 🤖 **Deep Learning Projects**
+## 🧠 **Deep Learning Projects**
 
-1. 📜 **BERT Text Tokenization**: Dive deep into text processing with BERT.
-2. 🎬 **Sentiment Analysis**: Detect negative reviews in classic films.
-3. 🧑 **Age Estimation with ResNet50**: Fine-tuned age predictions using ResNet50.
-
-### **Additional Code Demos**:
-- 👚 **Clothing Classification**: Identify and categorize clothing items.
-- 🍎 **Fruits Classifier**: Differentiate between fruit types.
-- 🧠 **LeNet Demo**: Explore deep learning with a simple LeNet demonstration using the Adam optimizer.
+1. 🔢 **LeNet5 MNIST Tensorflow**: LeNet-5 with TensorFlow for MNIST digit recognition.
+2. 🧑 **ResNet50 Age-Estimation Tensorflow**: ResNet50-based age prediction fine-tuned in TensorFlow.
+3. 🎬 **BERT Sentiment-Analysis Pytorch**: BERT for sentiment analysis in classic movie reviews with PyTorch.

@@ -1,4 +1,4 @@
-## 📈 **Data Science / Machine Learning Projects**
+## 📈🤖 **Data Science / Machine Learning Projects**
 
 1. 📱 **Plan Recommender for Telecommunications**: Tailor plans to suit individual customer needs.
 2. 🏦 **Customer Churn Prediction for Banks**: Keep loyal customers engaged.

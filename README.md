@@ -1,10 +1,10 @@
-# 📊 **Data Science & Machine Learning Project Showcase**
+# 📊 **Data Science, Machine Learning & Deep Learning Project Showcase**
 
-Dive into a collection of projects that span various domains of data science and machine learning. From predicting customer churn to optimizing gold extraction, get a feel for the wide range of problems that can be tackled with data-driven approaches.
+Dive into a collection of projects encompassing diverse domains of data science, machine learning, and deep learning. From predicting customer churn to optimizing gold extraction, and advancing to intricate neural network applications for image and language processing, this showcase demonstrates the vast potential of data-driven and AI-powered solutions across various industries. Immerse yourself in projects that not only solve complex problems but also illustrate the cutting-edge techniques in machine learning and deep learning.
 
 ---
 
-## 📈 **Data Science / Machine Learning Projects**
+## 📈🤖 **Data Science / Machine Learning Projects**
 
 1. 📱 [**Plan Recommender for Telecommunications**](https://github.com/keneth4/ml_projects/blob/main/ds_ml/1.%20Plan%20recommender%20for%20telecommunications%20company.ipynb): Tailor plans to suit individual customer needs.
 2. 🏦 [**Customer Churn Prediction for Banks**](https://github.com/keneth4/ml_projects/blob/main/ds_ml/2.%20Customer%20churn%20prediction%20for%20a%20bank.ipynb): Keep loyal customers engaged.
@@ -17,9 +17,9 @@ Dive into a collection of projects that span various domains of data science and
 
 ---
 
-## 🤖 **Deep Learning Projects**
+## 🧠 **Deep Learning Projects**
 
-1. 🧠 [**LeNet5 MNIST Tensorflow**](https://github.com/keneth4/ml_projects/blob/main/deep_learning/1.%20LeNet5%20MNIST%20Tensorflow.ipynb): LeNet-5 with TensorFlow for MNIST digit recognition.
+1. 🔢 [**LeNet5 MNIST Tensorflow**](https://github.com/keneth4/ml_projects/blob/main/deep_learning/1.%20LeNet5%20MNIST%20Tensorflow.ipynb): LeNet-5 with TensorFlow for MNIST digit recognition.
 2. 🧑 **ResNet50 Age-Estimation Tensorflow**: ResNet50-based age prediction fine-tuned in TensorFlow.
 3. 🎬 **BERT Sentiment-Analysis Pytorch**: BERT for sentiment analysis in classic movie reviews with PyTorch.
 
