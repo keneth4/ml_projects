@@ -19,7 +19,7 @@ Dive into a collection of projects that span various domains of data science and
 
 ## 🤖 **Deep Learning Projects**
 
-1. 🧠 **LeNet5 MNIST Tensorflow**: LeNet-5 with TensorFlow for MNIST digit recognition.
+1. 🧠 [**LeNet5 MNIST Tensorflow**](https://github.com/keneth4/ml_projects/blob/main/deep_learning/1.%20LeNet5%20MNIST%20Tensorflow.ipynb): LeNet-5 with TensorFlow for MNIST digit recognition.
 2. 🧑 **ResNet50 Age-Estimation Tensorflow**: ResNet50-based age prediction fine-tuned in TensorFlow.
 3. 🎬 **BERT Sentiment-Analysis Pytorch**: BERT for sentiment analysis in classic movie reviews with PyTorch.
 
