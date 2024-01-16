@@ -1,0 +1,5 @@
+opencv-python==4.8.1.78
+mediapipe==0.10.0
+numpy>=1.23.5
+pydantic>=1.10.7
+pyyaml>=6.0
