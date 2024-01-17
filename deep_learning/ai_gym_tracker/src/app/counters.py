@@ -31,7 +31,7 @@ class CurlCounter(Counter, CounterUtils):
             reps_per_set=reps_per_set,
             num_sets=num_sets,
             start_pose_image_path=start_pose_image_path)
-        self.counter_type = self.__class__.__name__
+        self.title = "Bicep Curls"
         self.min_angle = min_angle
         self.max_angle = max_angle
 
@@ -68,7 +68,7 @@ class CurlCounter(Counter, CounterUtils):
             self.state = 'start'
             self.right_state = 'start'
             self.left_state = 'start'
-            self.output = {"counter": "", "message": "Please stand in the starting position"}
+            self.output = {"counter": "", "message": "Please stand in the starting position", "sets": "", "reps": ""}
             self.current_right_angle = self.resting_angle
             self.current_left_angle = self.resting_angle
 
@@ -90,25 +90,42 @@ class CurlCounter(Counter, CounterUtils):
             self.right_state = 'down'
         if self.current_right_angle < self.min_angle and self.right_state == 'down':
             self.right_state = 'up'
-            self.output = {"counter": f"{self.left_counter}/{self.right_counter}", "message": "Slowly curl down right"}
+            self.output = {
+                "counter": [self.left_counter, self.right_counter],
+                "sets": {"current": self.current_set, "total": self.num_sets},
+                "reps": self.reps_per_set,
+                "message": "Slowly curl down right"}
         
         if self.current_left_angle > self.max_angle and self.left_state == 'up':
             self.left_counter += 1
             self.left_state = 'down'
         if self.current_left_angle < self.min_angle and self.left_state == 'down':
             self.left_state = 'up'
-            self.output = {"counter": f"{self.left_counter}/{self.right_counter}", "message": "Slowly curl down left"}
+            self.output = {
+                "counter": [self.left_counter, self.right_counter],
+                "sets": {"current": self.current_set, "total": self.num_sets},
+                "reps": self.reps_per_set,
+                "message": "Slowly curl down left"}
 
         if self.right_state == 'down' and self.left_state == 'down':
             right_percentage = round(round(1 - (self.current_right_angle - self.min_angle) / (self.max_angle - self.min_angle), 2) * 100)
             left_percentage = round(round(1 - (self.current_left_angle - self.min_angle) / (self.max_angle - self.min_angle), 2) * 100)
 
             if right_percentage > 0:
-                self.output = {"counter": f"{self.left_counter}/{self.right_counter}", "message": f"{max(right_percentage, 0)}% right curl up"}
+                self.output = {"counter": [self.left_counter, self.right_counter],
+                "sets": {"current": self.current_set, "total": self.num_sets},
+                "reps": self.reps_per_set,
+                "message": f"{max(right_percentage, 0)}% right curl up"}
             elif left_percentage > 0:
-                self.output = {"counter": f"{self.left_counter}/{self.right_counter}", "message": f"{max(left_percentage, 0)}% left curl up"}
+                self.output = {"counter": [self.left_counter, self.right_counter],
+                "sets": {"current": self.current_set, "total": self.num_sets},
+                "reps": self.reps_per_set,
+                "message": f"{max(left_percentage, 0)}% left curl up"}
             else:
-                self.output = {"counter": f"{self.left_counter}/{self.right_counter}", "message": "curl up one arm at a time"}
+                self.output = {"counter": [self.left_counter, self.right_counter],
+                "sets": {"current": self.current_set, "total": self.num_sets},
+                "reps": self.reps_per_set,
+                "message": "curl up one arm at a time"}
 
         self.reps_this_set = self.right_counter + self.left_counter
         if self.reps_this_set == self.reps_per_set * 2:

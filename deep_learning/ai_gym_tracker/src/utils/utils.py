@@ -3,8 +3,8 @@ from typing import Tuple, List, Dict
 import numpy as np
 import cv2
 
-from src.app import mp_pose, mp_drawing, background_color
-from src.utils import counter_config, message_config
+from src.app import mp_pose, mp_drawing, stats_background_color, stats_position_top
+from src.utils import counter_config, message_config, title_config, sets_config
 
 # Create counters utils class
 class CounterUtils:
@@ -82,10 +82,28 @@ class VideoCaptureUtils:
         Returns:
             Tuple[int, int]: Position of the text on the screen.
         """
-        # Calculate text size and position
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
-        return ((img_size[0]) - (text_size[0] // 2) - 50, (img_size[1] // 2) + (text_size[1] // 2))
-    
+        return ((img_size[0]) - (text_size[0] // 2) - 75, (img_size[1] // 2) + (text_size[1] // 2))
+
+
+    def get_top_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
+        """
+        Calculates the position of the text on the screen.
+
+        Args:
+            text (str): Text to draw on the image.
+            font (int): Font to use.
+            font_scale (float): Font scale to use.
+            font_thickness (int): Font thickness to use.
+            img_size (Tuple[int, int]): Size of the image.
+
+        Returns:
+            Tuple[int, int]: Position of the text on the screen.
+        """
+        text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
+        return ((img_size[0]) - (text_size[0] // 2) - 75, text_size[1] * 2)
+
+
     def get_top_right_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
         Calculates the position of the text on the screen.
@@ -102,6 +120,24 @@ class VideoCaptureUtils:
         """
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         return (img_size[1] - text_size[0] - 50, text_size[1] + 50)
+
+
+    def get_top_left_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
+        """
+        Calculates the position of the text on the screen.
+
+        Args:
+            text (str): Text to draw on the image.
+            font (int): Font to use.
+            font_scale (float): Font scale to use.
+            font_thickness (int): Font thickness to use.
+            img_size (Tuple[int, int]): Size of the image.
+
+        Returns:
+            Tuple[int, int]: Position of the text on the screen.
+        """
+        text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
+        return (50, text_size[1] + 75)
 
 
     def draw_text_with_border(self, image: np.ndarray, text: str, position: Tuple[int, int], font: int, font_scale: int, thickness: int, color: Tuple[int, int, int], border_thickness: int) -> None:
@@ -127,6 +163,7 @@ class VideoCaptureUtils:
         # Draw the main text
         cv2.putText(image, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
 
+
     def configure_text_settings(self, text_type: str, image: np.ndarray, text: str) -> Tuple:
         """
         Configures text settings based on the type of text (counter or message).
@@ -149,11 +186,36 @@ class VideoCaptureUtils:
             font_scale = message_config["font_scale"]
             thickness = font_scale * 2
             position = self.get_bottom_center_screen_text_position(text, font, font_scale, thickness, image.shape)
+        elif text_type == "title":
+            font = getattr(cv2, title_config["font"])
+            font_scale = title_config["font_scale"]
+            thickness = font_scale * 2
+            position = self.get_top_center_screen_text_position(text, font, font_scale, thickness, image.shape)
+        elif text_type == "sets":
+            font = getattr(cv2, sets_config["font"])
+            font_scale = sets_config["font_scale"]
+            thickness = font_scale * 2
+            position = self.get_top_left_screen_text_position(text, font, font_scale, thickness, image.shape)
 
         border_thickness = thickness + 2
         return font, font_scale, thickness, position, border_thickness
 
-    def draw_output_on_image(self, output: Dict[str, str], image: np.ndarray) -> None:
+
+    def draw_stats_background(self, image: np.ndarray) -> None:
+        """
+        Draws the background for the stats bar.
+
+        Args:
+            image (np.ndarray): Image to draw on.
+        """
+        text_height = cv2.getTextSize("0", getattr(cv2, counter_config["font"]), counter_config["font_scale"], counter_config["font_scale"] * 2)[0][1]
+        if stats_position_top:
+            cv2.rectangle(image, (0, 0), (image.shape[1], text_height + 100), stats_background_color, -1)
+        else:
+            cv2.rectangle(image, (0, image.shape[0] - text_height - 100), (image.shape[1], image.shape[0]), stats_background_color, -1)
+
+
+    def draw_output_on_image(self, title: str, output: Dict[str, str], image: np.ndarray) -> None:
         """
         Draws the output on an image.
 
@@ -161,10 +223,29 @@ class VideoCaptureUtils:
             output (Dict[str, str]): Output to draw.
             image (np.ndarray): Image to draw on.
         """
-        for text_type in ['counter', 'message']:
+        # Dwaw title
+        font, font_scale, thickness, position, border_thickness = self.configure_text_settings("title", image, title)
+        self.draw_text_with_border(image, title, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+        for text_type in ['counter', 'message', 'sets']:
             if text := output.get(text_type, ""):
-                font, font_scale, thickness, position, border_thickness = self.configure_text_settings(text_type, image, text)
-                self.draw_text_with_border(image, text, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+                if isinstance(text, list):
+                    textl = f"L {text[0]}/{output.get('reps', '')}"
+                    textr = f"R {text[1]}/{output.get('reps', '')}"
+                    fontl, _, _, positionl, _ = self.configure_text_settings(text_type, image, textl)
+                    fontr, _, _, positionr, _ = self.configure_text_settings(text_type, image, textr)
+                    x_offset = 200
+                    y_offset = 0
+                    l_y_offset = -60
+                    l_x_offset = -10
+                    positionl = (positionl[0] + x_offset + l_x_offset, positionl[1] + y_offset + l_y_offset)
+                    self.draw_text_with_border(image, textl, positionl, fontl, 2, 4, (255, 255, 255), 6)
+                    positionr = (positionr[0] + x_offset, positionr[1] + y_offset)
+                    self.draw_text_with_border(image, textr, positionr, fontr, 2, 4, (255, 255, 255), 6)
+                else:
+                    if text_type == "sets":
+                        text = f"Set {text['current']}/{text['total']}"
+                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings(text_type, image, text)
+                    self.draw_text_with_border(image, text, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
 
 
     def draw_start_pose(self, start_pose_image: np.ndarray, image: np.ndarray, opacity: float) -> np.ndarray:

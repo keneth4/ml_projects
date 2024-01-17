@@ -11,7 +11,11 @@ show_landmarks = config['video_capture']['show_landmarks']
 
 # Load interface config
 window_name = config['interface']['window_name']
-background_color = (config['interface']['background_color']['r'], config['interface']['background_color']['g'], config['interface']['background_color']['b'])
+stats_background_color = (
+    config['interface']['stats_bar']['background_color']['r'],
+    config['interface']['stats_bar']['background_color']['g'],
+    config['interface']['stats_bar']['background_color']['b'])
+stats_position_top = config['interface']['stats_bar']['position_top']
 
 # Load CurlCounter config
 curl_counter_config = config['pose_estimation']['curl_counter']

@@ -16,14 +16,22 @@ video_capture:
 
 interface:
   window_name: AI Gym Tracker
-  background_color:
-    r: 0
-    g: 0
-    b: 0
+  stats_bar:
+    background_color:
+      r: 0
+      g: 0
+      b: 0
+    position_top: true
   counter:
     font: FONT_HERSHEY_DUPLEX
     font_scale: 4
   message:
+    font: FONT_HERSHEY_SIMPLEX
+    font_scale: 2
+  title:
+    font: FONT_HERSHEY_SIMPLEX
+    font_scale: 3
+  sets:
     font: FONT_HERSHEY_SIMPLEX
     font_scale: 2
 

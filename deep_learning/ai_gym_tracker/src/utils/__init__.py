@@ -8,3 +8,9 @@ counter_config = config['interface']['counter']
 
 # Load message config
 message_config = config['interface']['message']
+
+# Load title config
+title_config = config['interface']['title']
+
+# Load sets config
+sets_config = config['interface']['sets']
