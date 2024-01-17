@@ -28,10 +28,10 @@ class CurlCounter(Counter, CounterUtils):
             reps_per_set (int): Number of reps per set
         """
         super().__init__(
+            title="Bicep Curls",
             reps_per_set=reps_per_set,
             num_sets=num_sets,
             start_pose_image_path=start_pose_image_path)
-        self.title = "Bicep Curls"
         self.min_angle = min_angle
         self.max_angle = max_angle
 

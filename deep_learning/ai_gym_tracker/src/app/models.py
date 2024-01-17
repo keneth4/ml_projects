@@ -8,10 +8,12 @@ class Counter(ABC):
     """
     A base class for Counter objects.
 
-    Attrs:
+    Attributes
     ------
     counter : int
-        The current count.
+        The current global count.
+    title : str
+        The title of the counter.
     reps_per_set : Optional[int]
         The number of reps per set.
     num_sets : Optional[int]
@@ -21,12 +23,22 @@ class Counter(ABC):
     reps_this_set : int
         The number of reps this set.
     landmarks : List[mp_pose.PoseLandmark]
-        List of landmarks.
+        List of detected landmarks.
     state : str
         The current state.
+    output : Dict[str, str]
+        The output of the counter.
+        Must be in the format 
+        {
+            "counter": # Can be a string, int, or list. Lists are used for both sides/arms counters.
+            "message": "", # The current message shown to the user.
+            "sets": {"current": self.current_set, "total": self.num_sets},
+            "reps": self.reps_per_set,
+        }
     """
     def __init__(
         self,
+        title: str = "",
         state: str = "start",
         output: Dict[str, str] = None,
         reps_per_set: Optional[int] = None,
@@ -42,7 +54,7 @@ class Counter(ABC):
             start_pose_image_path (str): The path to the start pose image.
         """
         self.counter = 0
-        self.counter_type = self.__class__.__name__
+        self.title = title
         self.reps_per_set = reps_per_set
         self.num_sets = num_sets
         self.current_set = 1
@@ -102,7 +114,7 @@ class Counter(ABC):
         Returns:
             str: Information about the counter.
         """
-        return str(f"Type: {str(self.counter_type)}\nReps per set: {str(self.reps_per_set)}\nNum sets: {str(self.num_sets)}\nTotal Reps: {str(self.counter)}\nCurrent state: {str(self.state)}")
+        return str(f"Type: {str(self.title)}\nReps per set: {str(self.reps_per_set)}\nNum sets: {str(self.num_sets)}\nTotal Reps: {str(self.counter)}\nCurrent state: {str(self.state)}")
 
     def __repr__(self):
         return str(self.output) if self.output else self.get_info()
