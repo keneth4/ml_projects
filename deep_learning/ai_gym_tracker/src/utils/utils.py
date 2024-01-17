@@ -183,8 +183,8 @@ class VideoCaptureUtils:
         alpha_channel_resized = cv2.resize(alpha_channel, (new_width, new_height))
 
         # Since the resized image might not match the background size, we need to center it
-        # Create a new image with the same size as the background and fill it with white color
-        silhouette = np.ones_like(image) * 255
+        # Create a new image with the same size as the background and fill it with gray color
+        silhouette = np.ones_like(image) * 127
 
         # Calculate top-left corner position to center the silhouette on the background
         x_offset = (image.shape[1] - new_width) // 2
