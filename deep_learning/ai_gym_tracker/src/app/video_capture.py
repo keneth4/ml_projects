@@ -54,7 +54,8 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
             pose_counter (Counter): The pose counter to use.
         """
         with mp_pose.Pose(min_detection_confidence=self.MIN_DETECTION_CONFIDENCE, min_tracking_confidence=self.MIN_TRACKING_CONFIDENCE) as pose:
-            while self.cap.isOpened():
+            start_pose_image = cv2.imread(pose_counter.start_pose_image_path, cv2.IMREAD_UNCHANGED)
+            while self.cap.isOpened() and pose_counter.state != "finished":
                 _, image = self.cap.read()
 
                 # Flip image horizontally
@@ -74,23 +75,23 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
 
                 # Extract landmarks
                 with contextlib.suppress(Exception):
-                    landmarks = results.pose_landmarks.landmark
+                    landmarks = results.pose_landmarks
                     
                     # Run pose counter
-                    pose_counter.run(landmarks)
+                    pose_counter.run(landmarks.landmark)
 
-                    # Render pose counter
-                    self.draw_counter_on_image(pose_counter.output["counter"], image)
-                    self.draw_text_on_image(pose_counter.output["message"], image)
+                    # Render start pose
+                    if pose_counter.state == "start":
+                        image = self.draw_start_pose(start_pose_image, image, opacity=0.3)
+                    
+                    # Render output
+                    self.draw_output_on_image(pose_counter.output, image)
 
-                # Render detections
-                if self.show_landmarks:
-                    mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                                            mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=2),
-                                            mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2),
-                    )
+                    # Render detections
+                    if self.show_landmarks:
+                        self.draw_landmarks(image, landmarks)
 
-                # Show detections
-                cv2.imshow('Detection Feed', image)
+                # Show to screen
+                cv2.imshow('AI Gym Tracker', image)
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     break

@@ -1,12 +1,13 @@
 mediapipe:
   pose:
-    min_detection_confidence: 0.5
-    min_tracking_confidence: 0.5
+    min_detection_confidence: 0.8
+    min_tracking_confidence: 0.8
 
 pose_estimation:
   curl_counter:
-    min_angle: 30
+    min_angle: 20
     max_angle: 150
+    start_pose_image_path: src/assets/curl_start_pose.png
 
 video_capture:
   device: 0

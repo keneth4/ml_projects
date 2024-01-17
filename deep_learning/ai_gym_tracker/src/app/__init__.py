@@ -3,9 +3,10 @@ import mediapipe as mp
 from src.utils import config
 
 # Load config
-DEVICE = config['video_capture']['device']
-FLIP = config['video_capture']['flip']
-SHOW_LANDMARKS = config['video_capture']['show_landmarks']
+device = config['video_capture']['device']
+flip = config['video_capture']['flip']
+show_landmarks = config['video_capture']['show_landmarks']
+curl_counter_config = config['pose_estimation']['curl_counter']
 
 # Load MediaPipe pose model
 mp_drawing = mp.solutions.drawing_utils
