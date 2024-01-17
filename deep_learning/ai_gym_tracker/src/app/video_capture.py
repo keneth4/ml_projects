@@ -4,7 +4,7 @@ import cv2
 
 from src.utils.utils import VideoCaptureUtils
 from src.app.models import Counter
-from src.app import mp_pose, mp_drawing
+from src.app import mp_pose, min_detection_confidence, min_tracking_confidence
 
 
 # Create a video capture class, generalizing the code above
@@ -23,21 +23,19 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
     flip : bool
         Whether to flip the video feed horizontally.
     """
-    def __init__(self, device: int = 0, flip: bool = False, show_landmarks: bool = True) -> None:
+    def __init__(self, window_name: str, device: int = 0, flip: bool = False, show_landmarks: bool = True) -> None:
         """
         Args:
             device (int): The device index of the camera to use.
         """
         self.cap = cv2.VideoCapture(device)
+        self.window_name = window_name
         self.screen_width = int(self.cap.get(3))
         self.screen_height = int(self.cap.get(4))
         self.flip = flip
         self.show_landmarks = show_landmarks
-
-        from src.utils import config
-        # Load config
-        self.MIN_DETECTION_CONFIDENCE = config['mediapipe']['pose']['min_detection_confidence']
-        self.MIN_TRACKING_CONFIDENCE = config['mediapipe']['pose']['min_tracking_confidence']
+        self.min_detection_confidence = min_detection_confidence
+        self.min_tracking_confidence = min_tracking_confidence
 
     def __enter__(self):
         return self
@@ -53,7 +51,7 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         Args:
             pose_counter (Counter): The pose counter to use.
         """
-        with mp_pose.Pose(min_detection_confidence=self.MIN_DETECTION_CONFIDENCE, min_tracking_confidence=self.MIN_TRACKING_CONFIDENCE) as pose:
+        with mp_pose.Pose(min_detection_confidence=self.min_detection_confidence, min_tracking_confidence=self.min_tracking_confidence) as pose:
             start_pose_image = cv2.imread(pose_counter.start_pose_image_path, cv2.IMREAD_UNCHANGED)
             while self.cap.isOpened() and pose_counter.state != "finished":
                 _, image = self.cap.read()
@@ -92,6 +90,6 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
                         self.draw_landmarks(image, landmarks)
 
                 # Show to screen
-                cv2.imshow('AI Gym Tracker', image)
+                cv2.imshow(self.window_name, image)
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     break
