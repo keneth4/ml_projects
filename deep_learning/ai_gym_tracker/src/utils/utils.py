@@ -3,8 +3,8 @@ from typing import Tuple, List, Dict
 import numpy as np
 import cv2
 
-from src.app import mp_pose
-from src.app import mp_drawing
+from src.app import mp_pose, mp_drawing, background_color
+from src.utils import counter_config, message_config
 
 # Create counters utils class
 class CounterUtils:
@@ -68,7 +68,7 @@ class VideoCaptureUtils:
         )
 
 
-    def get_centered_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
+    def get_bottom_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
         Calculates the position of the text on the screen.
 
@@ -84,9 +84,24 @@ class VideoCaptureUtils:
         """
         # Calculate text size and position
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
-        text_x = (img_size[0]) - (text_size[0] // 2) - 50 # 50 is a magic number to center the text
-        text_y = (img_size[1] // 2) + (text_size[1] // 2)
-        return (text_x, text_y)
+        return ((img_size[0]) - (text_size[0] // 2) - 50, (img_size[1] // 2) + (text_size[1] // 2))
+    
+    def get_top_right_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
+        """
+        Calculates the position of the text on the screen.
+
+        Args:
+            text (str): Text to draw on the image.
+            font (int): Font to use.
+            font_scale (float): Font scale to use.
+            font_thickness (int): Font thickness to use.
+            img_size (Tuple[int, int]): Size of the image.
+
+        Returns:
+            Tuple[int, int]: Position of the text on the screen.
+        """
+        text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
+        return (img_size[1] - text_size[0] - 50, text_size[1] + 50)
 
 
     def draw_text_with_border(self, image: np.ndarray, text: str, position: Tuple[int, int], font: int, font_scale: int, thickness: int, color: Tuple[int, int, int], border_thickness: int) -> None:
@@ -125,16 +140,15 @@ class VideoCaptureUtils:
             Tuple containing font, font_scale, thickness, position, and border_thickness.
         """
         if text_type == "counter":
-            font = cv2.FONT_HERSHEY_DUPLEX
-            font_scale = 5
+            font = getattr(cv2, counter_config["font"])
+            font_scale = counter_config["font_scale"]
             thickness = font_scale * 2
-            text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
-            position = (image.shape[1] - text_size[0] - 50, text_size[1] + 50)  # Top-right corner
-        else:  # Assume message
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 2
+            position = self.get_top_right_screen_text_position(text, font, font_scale, thickness, image.shape)
+        elif text_type == "message":
+            font = getattr(cv2, message_config["font"])
+            font_scale = message_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_centered_screen_text_position(text, font, font_scale, thickness, image.shape)
+            position = self.get_bottom_center_screen_text_position(text, font, font_scale, thickness, image.shape)
 
         border_thickness = thickness + 2
         return font, font_scale, thickness, position, border_thickness

@@ -7,7 +7,7 @@ from src.app import curl_counter_config
 
 if __name__ == "__main__":
     # Start PoseDetectorVideoCapture
-    with PoseDetectorVideoCapture(window_name='AI Gym Tracker', device=device, flip=flip, show_landmarks=show_landmarks) as video_capture:
+    with PoseDetectorVideoCapture(device=device, flip=flip, show_landmarks=show_landmarks) as video_capture:
         # Create instance of CurlCounter
         curl_counter = CurlCounter(**curl_counter_config, num_sets=2, reps_per_set=5)
 

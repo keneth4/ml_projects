@@ -4,7 +4,7 @@ import cv2
 
 from src.utils.utils import VideoCaptureUtils
 from src.app.models import Counter
-from src.app import mp_pose, min_detection_confidence, min_tracking_confidence
+from src.app import mp_pose, min_detection_confidence, min_tracking_confidence, window_name
 
 
 # Create a video capture class, generalizing the code above
@@ -16,22 +16,21 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
     ----------
     cap : cv2.VideoCapture
         The video capture object.
-    screen_width : int
-        The width of the screen.
-    screen_height : int
-        The height of the screen.
     flip : bool
         Whether to flip the video feed horizontally.
+    show_landmarks : bool
+        Whether to show the landmarks on the video feed.
+    min_detection_confidence : float
+        Minimum confidence value ([0.0, 1.0]) for pose detection to be considered successful.
+    min_tracking_confidence : float
+        Minimum confidence value ([0.0, 1.0]) for pose tracking to be considered successful.
     """
-    def __init__(self, window_name: str, device: int = 0, flip: bool = False, show_landmarks: bool = True) -> None:
+    def __init__(self, device: int = 0, flip: bool = False, show_landmarks: bool = True) -> None:
         """
         Args:
             device (int): The device index of the camera to use.
         """
         self.cap = cv2.VideoCapture(device)
-        self.window_name = window_name
-        self.screen_width = int(self.cap.get(3))
-        self.screen_height = int(self.cap.get(4))
         self.flip = flip
         self.show_landmarks = show_landmarks
         self.min_detection_confidence = min_detection_confidence
@@ -90,6 +89,6 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
                         self.draw_landmarks(image, landmarks)
 
                 # Show to screen
-                cv2.imshow(self.window_name, image)
+                cv2.imshow(window_name, image)
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     break

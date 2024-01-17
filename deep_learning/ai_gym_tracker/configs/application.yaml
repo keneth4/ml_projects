@@ -12,7 +12,21 @@ pose_estimation:
 video_capture:
   device: 0
   flip: true
-  show_landmarks: true
+  show_landmarks: false
+
+interface:
+  window_name: AI Gym Tracker
+  background_color:
+    r: 0
+    g: 0
+    b: 0
+  counter:
+    font: FONT_HERSHEY_DUPLEX
+    font_scale: 4
+  message:
+    font: FONT_HERSHEY_SIMPLEX
+    font_scale: 2
 
 logging:
   level: INFO
+
