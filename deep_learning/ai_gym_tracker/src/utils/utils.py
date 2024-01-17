@@ -89,6 +89,56 @@ class VideoCaptureUtils:
         return (text_x, text_y)
 
 
+    def draw_text_with_border(self, image: np.ndarray, text: str, position: Tuple[int, int], font: int, font_scale: int, thickness: int, color: Tuple[int, int, int], border_thickness: int) -> None:
+        """
+        Draws text with a border on an image.
+
+        Args:
+            image (np.ndarray): The image to draw on.
+            text (str): The text to draw.
+            position (Tuple[int, int]): The position to draw the text.
+            font (int): The font type.
+            font_scale (int): The scale of the font.
+            thickness (int): The thickness of the font.
+            color (Tuple[int, int, int]): The color of the text.
+            border_thickness (int): The thickness of the border.
+        """
+        # Draw black border by offsetting text
+        for x_offset in [-1, 1]:
+            for y_offset in [-1, 1]:
+                border_position = (position[0] + x_offset, position[1] + y_offset)
+                cv2.putText(image, text, border_position, font, font_scale, (0, 0, 0), border_thickness, cv2.LINE_AA)
+
+        # Draw the main text
+        cv2.putText(image, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
+
+    def configure_text_settings(self, text_type: str, image: np.ndarray, text: str) -> Tuple:
+        """
+        Configures text settings based on the type of text (counter or message).
+
+        Args:
+            text_type (str): The type of text ('counter' or 'message').
+            image (np.ndarray): The image to draw on.
+            text (str): The text to draw.
+
+        Returns:
+            Tuple containing font, font_scale, thickness, position, and border_thickness.
+        """
+        if text_type == "counter":
+            font = cv2.FONT_HERSHEY_DUPLEX
+            font_scale = 5
+            thickness = font_scale * 2
+            text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+            position = (image.shape[1] - text_size[0] - 50, text_size[1] + 50)  # Top-right corner
+        else:  # Assume message
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 2
+            thickness = font_scale * 2
+            position = self.get_centered_screen_text_position(text, font, font_scale, thickness, image.shape)
+
+        border_thickness = thickness + 2
+        return font, font_scale, thickness, position, border_thickness
+
     def draw_output_on_image(self, output: Dict[str, str], image: np.ndarray) -> None:
         """
         Draws the output on an image.
@@ -97,45 +147,10 @@ class VideoCaptureUtils:
             output (Dict[str, str]): Output to draw.
             image (np.ndarray): Image to draw on.
         """
-        if counter := output.get("counter", ""):
-            counter = str(counter)
-            # Set parameters for the text
-            counter_font = cv2.FONT_HERSHEY_DUPLEX
-            counter_font_scale = 5
-            counter_font_thickness = counter_font_scale * 2
-            counter_border_thickness = counter_font_thickness + 2
-
-            # Calculate text size and position
-            counter_text_size = cv2.getTextSize(counter, counter_font, counter_font_scale, counter_font_thickness)[0]
-            counter_position = (image.shape[1] - counter_text_size[0] - 50, counter_text_size[1] + 50) # Top-right corner
-
-            # Draw black border by offsetting text
-            for x_offset in [-1, 1]:
-                for y_offset in [-1, 1]:
-                    counter_border_position = (counter_position[0] + x_offset, counter_position[1] + y_offset)
-                    cv2.putText(image, counter, counter_border_position, counter_font, counter_font_scale, (0, 0, 0), counter_border_thickness, cv2.LINE_AA)
-
-            # Draw the main text            
-            cv2.putText(image, counter, counter_position, counter_font, counter_font_scale, (255, 255, 255), counter_font_thickness, cv2.LINE_AA)
-
-        if message := output.get("message", ""):
-            # Set parameters for the text
-            message_font = cv2.FONT_HERSHEY_SIMPLEX
-            message_font_scale = 2
-            message_font_thickness = message_font_scale * 2
-            message_border_thickness = message_font_thickness + 2
-
-            # Calculate text size and position
-            message_position = self.get_centered_screen_text_position(message, message_font, message_font_scale, message_font_thickness, image.shape)
-
-            # Draw black border by offsetting text
-            for x_offset in [-1, 1]:
-                for y_offset in [-1, 1]:
-                    message_border_position = (message_position[0] + x_offset, message_position[1] + y_offset)
-                    cv2.putText(image, message, message_border_position, message_font, message_font_scale, (0, 0, 0), message_border_thickness, cv2.LINE_AA)
-
-            # Draw the main text
-            cv2.putText(image, message, message_position, message_font, message_font_scale, (255, 255, 255), message_font_thickness, cv2.LINE_AA)
+        for text_type in ['counter', 'message']:
+            if text := output.get(text_type, ""):
+                font, font_scale, thickness, position, border_thickness = self.configure_text_settings(text_type, image, text)
+                self.draw_text_with_border(image, text, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
 
 
     def draw_start_pose(self, start_pose_image: np.ndarray, image: np.ndarray, opacity: float) -> np.ndarray:
