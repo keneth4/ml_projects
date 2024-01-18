@@ -32,8 +32,8 @@ class Counter(ABC):
         {
             "counter": # Can be a string, int, or list. Lists are used for both sides/arms counters.
             "message": "", # The current message shown to the user.
-            "sets": {"current": self.current_set, "total": self.num_sets},
-            "reps": self.reps_per_set,
+            "sets": "" # current set / total sets
+            "reps": self.reps_per_set, # Only used when counter us list.
         }
     """
     def __init__(

@@ -17,8 +17,9 @@ stats_background_color = (
     config['interface']['stats_bar']['background_color']['b'])
 stats_position_top = config['interface']['stats_bar']['position_top']
 
-# Load CurlCounter config
+# Load counters config
 curl_counter_config = config['pose_estimation']['curl_counter']
+squat_counter_config = config['pose_estimation']['squat_counter']
 
 # Load MediaPipe pose model
 mp_drawing = mp.solutions.drawing_utils

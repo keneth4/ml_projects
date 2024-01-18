@@ -3,16 +3,20 @@ mediapipe:
     min_detection_confidence: 0.8
     min_tracking_confidence: 0.8
 
+video_capture:
+  device: 0
+  flip: true
+  show_landmarks: false
+
 pose_estimation:
   curl_counter:
     min_angle: 20
     max_angle: 150
     start_pose_image_path: src/assets/curl_start_pose.png
-
-video_capture:
-  device: 0
-  flip: true
-  show_landmarks: false
+  squat_counter:
+    min_angle: 130
+    max_angle: 175
+    start_pose_image_path: src/assets/squat_start_pose.png
 
 interface:
   window_name: AI Gym Tracker

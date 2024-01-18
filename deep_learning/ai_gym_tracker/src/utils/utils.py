@@ -242,8 +242,6 @@ class VideoCaptureUtils:
                     positionr = (positionr[0] + x_offset, positionr[1] + y_offset)
                     self.draw_text_with_border(image, textr, positionr, fontr, 2, 4, (255, 255, 255), 6)
                 else:
-                    if text_type == "sets":
-                        text = f"Set {text['current']}/{text['total']}"
                     font, font_scale, thickness, position, border_thickness = self.configure_text_settings(text_type, image, text)
                     self.draw_text_with_border(image, text, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
 
