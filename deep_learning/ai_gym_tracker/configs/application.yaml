@@ -27,7 +27,10 @@ interface:
   start_pose_image_path: src/assets/human-body-pose.png
   counter:
     font: FONT_HERSHEY_DUPLEX
-    font_scale: 4
+    font_scale: 3
+  double_counter:
+    font: FONT_HERSHEY_DUPLEX
+    font_scale: 2
   message:
     font: FONT_HERSHEY_SIMPLEX
     font_scale: 2

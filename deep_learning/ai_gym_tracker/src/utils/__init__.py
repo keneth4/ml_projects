@@ -6,6 +6,9 @@ config = load_config("configs/application.yaml")
 # Load counter config
 counter_config = config['interface']['counter']
 
+# Load double counter config
+double_counter_config = config['interface']['double_counter']
+
 # Load message config
 message_config = config['interface']['message']
 
