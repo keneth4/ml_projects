@@ -4,7 +4,7 @@ import cv2
 
 from src.utils.utils import VideoCaptureUtils
 from src.app.models import Counter
-from src.app import mp_pose, min_detection_confidence, min_tracking_confidence, window_name
+from src.app import mp_pose, min_detection_confidence, min_tracking_confidence, window_name, start_pose_image_path
 
 
 # Create a video capture class, generalizing the code above
@@ -51,7 +51,7 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
             pose_counter (Counter): The pose counter to use.
         """
         with mp_pose.Pose(min_detection_confidence=self.min_detection_confidence, min_tracking_confidence=self.min_tracking_confidence) as pose:
-            start_pose_image = cv2.imread(pose_counter.start_pose_image_path, cv2.IMREAD_UNCHANGED)
+            start_pose_image = cv2.imread(start_pose_image_path, cv2.IMREAD_UNCHANGED)
             while self.cap.isOpened() and pose_counter.state != "finished":
                 _, image = self.cap.read()
 

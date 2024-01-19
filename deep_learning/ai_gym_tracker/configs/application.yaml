@@ -12,11 +12,9 @@ pose_estimation:
   curl_counter:
     min_angle: 20
     max_angle: 150
-    start_pose_image_path: src/assets/curl_start_pose.png
   squat_counter:
     min_angle: 130
     max_angle: 175
-    start_pose_image_path: src/assets/squat_start_pose.png
 
 interface:
   window_name: AI Gym Tracker
@@ -26,6 +24,7 @@ interface:
       g: 0
       b: 0
     position_top: true
+  start_pose_image_path: src/assets/human-body-pose.png
   counter:
     font: FONT_HERSHEY_DUPLEX
     font_scale: 4

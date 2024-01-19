@@ -42,8 +42,7 @@ class Counter(ABC):
         state: str = "start",
         output: Dict[str, str] = None,
         reps_per_set: Optional[int] = None,
-        num_sets: Optional[int] = None,
-        start_pose_image_path: str = ""
+        num_sets: Optional[int] = None
     ) -> None:
         """
         Args:
@@ -51,7 +50,6 @@ class Counter(ABC):
             output (Dict[str, str]): The output.
             reps_per_set (Optional[int]): The number of reps per set.
             num_sets (Optional[int]): The number of sets.
-            start_pose_image_path (str): The path to the start pose image.
         """
         self.counter = 0
         self.title = title
@@ -63,8 +61,6 @@ class Counter(ABC):
         self.landmarks: List[mp_pose.PoseLandmark] = []
         self.state = state
         self.output = output or {}
-
-        self.start_pose_image_path = start_pose_image_path
 
     @abstractmethod
     def make_calculations(self):

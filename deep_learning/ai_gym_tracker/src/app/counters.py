@@ -14,7 +14,6 @@ class CurlCounter(Counter, CounterUtils):
         self,
         min_angle: int,
         max_angle: int,
-        start_pose_image_path: str,
         num_sets: int,
         reps_per_set: int,
     ) -> None:
@@ -24,15 +23,13 @@ class CurlCounter(Counter, CounterUtils):
         Args:
             min_angle (int): Minimum angle of the elbow
             max_angle (int): Maximum angle of the elbow
-            start_pose_image_path (str): Path to the start pose image
             num_sets (int): Number of sets
             reps_per_set (int): Number of reps per set
         """
         super().__init__(
             title="Bicep Curls",
             reps_per_set=reps_per_set,
-            num_sets=num_sets,
-            start_pose_image_path=start_pose_image_path)
+            num_sets=num_sets)
         self.min_angle = min_angle
         self.max_angle = max_angle
 
@@ -174,7 +171,6 @@ class SquatCounter(Counter, CounterUtils):
         self,
         min_angle: int,
         max_angle: int,
-        start_pose_image_path: str,
         num_sets: int,
         reps_per_set: int,
     ) -> None:
@@ -184,15 +180,13 @@ class SquatCounter(Counter, CounterUtils):
         Args:
             min_angle (int): Minimum angle of the knees (usually at the bottom of the squat)
             max_angle (int): Maximum angle of the knees (standing position)
-            start_pose_image_path (str): Path to the start pose image
             num_sets (int): Number of sets
             reps_per_set (int): Number of reps per set
         """
         super().__init__(
             title="Squats",
             reps_per_set=reps_per_set,
-            num_sets=num_sets,
-            start_pose_image_path=start_pose_image_path)
+            num_sets=num_sets)
         self.min_angle = min_angle
         self.max_angle = max_angle
 

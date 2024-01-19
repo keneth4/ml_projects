@@ -16,6 +16,7 @@ stats_background_color = (
     config['interface']['stats_bar']['background_color']['g'],
     config['interface']['stats_bar']['background_color']['b'])
 stats_position_top = config['interface']['stats_bar']['position_top']
+start_pose_image_path = config['interface']['start_pose_image_path']
 
 # Load counters config
 curl_counter_config = config['pose_estimation']['curl_counter']
