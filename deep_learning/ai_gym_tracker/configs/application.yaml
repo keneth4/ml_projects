@@ -24,7 +24,7 @@ interface:
       g: 0
       b: 0
     position_top: true
-  start_pose_image_path: src/assets/human-body-pose.png
+  start_pose_image_path: src/assets/human-body-pose-3d.png
   counter:
     font: FONT_HERSHEY_DUPLEX
     font_scale: 3

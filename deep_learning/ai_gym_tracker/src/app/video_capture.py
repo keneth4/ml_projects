@@ -79,7 +79,7 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
 
                     # Render start pose
                     if pose_counter.state == "start":
-                        image = self.draw_start_pose(start_pose_image, image, opacity=0.3)
+                        image = self.draw_start_pose(start_pose_image, image, opacity=0.5)
                     else:
                         self.draw_stats_background(image)
                     
