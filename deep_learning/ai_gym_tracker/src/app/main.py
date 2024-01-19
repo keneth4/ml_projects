@@ -12,6 +12,7 @@ if __name__ == "__main__":
         curl_counter = CurlCounter(**curl_counter_config, num_sets=2, reps_per_set=5)
         squat_counter = SquatCounter(**squat_counter_config, num_sets=2, reps_per_set=5)
 
-        # Run video capture
-        video_capture.run(curl_counter)
-        video_capture.run(squat_counter)
+        # Run menu
+        while counter := video_capture.run_menu([curl_counter, squat_counter]):
+            # Run video capture
+            video_capture.run_counter(counter)

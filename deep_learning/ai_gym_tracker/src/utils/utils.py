@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 from src.app import mp_pose, mp_drawing, stats_background_color, stats_position_top
-from src.utils import counter_config, double_counter_config, message_config, title_config, sets_config
+from src.utils import counter_config, double_counter_config, message_config, title_config, sets_config, timer_config
 
 # Create counters utils class
 class CounterUtils:
@@ -228,7 +228,7 @@ class VideoCaptureUtils:
             cv2.rectangle(image, (0, image.shape[0] - text_height - 100), (image.shape[1], image.shape[0]), stats_background_color, -1)
 
 
-    def draw_output_on_image(self, title: str, output: Dict[str, str], image: np.ndarray) -> None:
+    def draw_output_on_image(self, output: Dict[str, str], image: np.ndarray) -> None:
         """
         Draws the output on an image.
 
@@ -236,13 +236,10 @@ class VideoCaptureUtils:
             output (Dict[str, str]): Output to draw.
             image (np.ndarray): Image to draw on.
         """
-        # Dwaw title
-        font, font_scale, thickness, position, border_thickness = self.configure_text_settings("title", image, title)
-        self.draw_text_with_border(image, title, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
-        for text_type in ['counter', 'message', 'sets']:
+        for text_type in ['sets', 'title', 'counter', 'message']:#, 'timer']:
             if text := output.get(text_type, ""):
                 if isinstance(text, list):
-                    text = [f"L {text[0]}/{output.get('reps', '')}", f"R {text[1]}/{output.get('reps', '')}"]
+                    text = [f"L {text[0]}/{output.get('reps_per_set', '')}", f"R {text[1]}/{output.get('reps_per_set', '')}"]
                     font, font_scale, thickness, position, border_thickness = self.configure_text_settings('double_counter', image, text)
                     self.draw_text_with_border(image, text[0], position[0], font, font_scale, thickness, (255, 255, 255), border_thickness)
                     self.draw_text_with_border(image, text[1], position[1], font, font_scale, thickness, (255, 255, 255), border_thickness)
@@ -296,3 +293,37 @@ class VideoCaptureUtils:
 
         # Now blend the silhouette with the background image
         return cv2.addWeighted(silhouette, opacity, image, 1 - opacity, 0)
+    
+
+    def draw_menu_images(self, options: list, image: np.ndarray) -> np.ndarray:
+        """
+        Draws the menu images on a given frame.
+
+        Args:
+            options (list): A list of dictionaries containing the menu options.
+            image (np.ndarray): The frame (image) to draw the menu images on.
+
+        Returns:
+            np.ndarray: The updated frame with menu images drawn.
+        """
+        for option in options:
+            menu_image = option['image']
+            position = option['position']
+
+            # Check if the image has an alpha channel
+            if menu_image.shape[2] == 4:
+                # Extract the alpha channel as a mask
+                alpha_channel = menu_image[:, :, 3]
+                # Convert to BGR
+                menu_image = cv2.cvtColor(menu_image, cv2.COLOR_BGRA2BGR)
+                # Resize the alpha channel to match the menu image size
+                alpha_channel_resized = cv2.resize(alpha_channel, (menu_image.shape[1], menu_image.shape[0]))
+
+                # Create mask for the area where we want to blend the menu image
+                mask = alpha_channel_resized > 0
+
+                # Place the menu image onto the frame at the calculated position
+                image[int(position[1]):int(position[1]) + menu_image.shape[0], int(position[0]):int(position[0]) + menu_image.shape[1]][mask] = menu_image[mask]
+
+        return image
+

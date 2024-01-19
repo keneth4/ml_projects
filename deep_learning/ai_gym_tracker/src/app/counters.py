@@ -14,6 +14,7 @@ class CurlCounter(Counter, CounterUtils):
         self,
         min_angle: int,
         max_angle: int,
+        image_path: str,
         num_sets: int,
         reps_per_set: int,
     ) -> None:
@@ -28,6 +29,7 @@ class CurlCounter(Counter, CounterUtils):
         """
         super().__init__(
             title="Bicep Curls",
+            image_path=image_path,
             reps_per_set=reps_per_set,
             num_sets=num_sets)
         self.min_angle = min_angle
@@ -50,14 +52,15 @@ class CurlCounter(Counter, CounterUtils):
         return self.landmarks[:25] # From nose to right hip
     
 
-    def generate_feedback(self, message: str, display_counters: bool = True) -> Dict[str, str]:
+    def generate_feedback(self, message: str) -> Dict[str, str]:
         """
         Formats the feedback to be displayed to the user.
         """
         return {
-            "counter": [self.left_counter, self.right_counter] if display_counters else [0,0],
+            "title": self.title,
+            "counter": [self.left_counter, self.right_counter],
             "sets": f"Set {self.current_set}/{self.num_sets}",
-            "reps": self.reps_per_set,
+            "reps_per_set": self.reps_per_set,
             "message": message
         }
     
@@ -69,7 +72,7 @@ class CurlCounter(Counter, CounterUtils):
         self.state = 'start'
         self.right_state = 'start'
         self.left_state = 'start'
-        self.output = self.generate_feedback(message=message)
+        self.output = self.generate_feedback(message)
         self.current_right_angle = self.max_angle
         self.current_left_angle = self.max_angle
 
@@ -143,7 +146,7 @@ class CurlCounter(Counter, CounterUtils):
 
             # Check if both arms are up at the same time
             if right_percentage > 0 and left_percentage > 0:
-                self.set_starting_pose(message="Please curl up one arm at a time!")
+                self.set_starting_pose("Please curl up one arm at a time!")
 
             # Check if both arms are down at the same time
             elif right_percentage <= 0 and left_percentage <= 0:
@@ -171,6 +174,7 @@ class SquatCounter(Counter, CounterUtils):
         self,
         min_angle: int,
         max_angle: int,
+        image_path: str,
         num_sets: int,
         reps_per_set: int,
     ) -> None:
@@ -185,6 +189,7 @@ class SquatCounter(Counter, CounterUtils):
         """
         super().__init__(
             title="Squats",
+            image_path=image_path,
             reps_per_set=reps_per_set,
             num_sets=num_sets)
         self.min_angle = min_angle
@@ -202,12 +207,13 @@ class SquatCounter(Counter, CounterUtils):
         return self.landmarks[23:29] # From left hip to right ankle
     
 
-    def generate_feedback(self, message: str, display_counter: bool = True) -> Dict[str, str]:
+    def generate_feedback(self, message: str) -> Dict[str, str]:
         """
         Formats the feedback to be displayed to the user.
         """
         return {
-            "counter": f"{self.reps_this_set}/{self.reps_per_set}" if display_counter else 0,
+            "title": self.title,
+            "counter": f"{self.reps_this_set}/{self.reps_per_set}",
             "sets": f"Set {self.current_set}/{self.num_sets}",
             "message": message
         }
@@ -218,7 +224,7 @@ class SquatCounter(Counter, CounterUtils):
         Resets the state of the counter.
         """
         self.state = 'start'
-        self.output = self.generate_feedback(message=message)
+        self.output = self.generate_feedback(message)
         self.current_angle = self.max_angle
 
 

@@ -12,9 +12,11 @@ pose_estimation:
   curl_counter:
     min_angle: 20
     max_angle: 150
+    image_path: src/assets/bicep-curl.png
   squat_counter:
     min_angle: 130
     max_angle: 175
+    image_path: src/assets/dumbbell-squat.png
 
 interface:
   window_name: AI Gym Tracker
@@ -25,21 +27,25 @@ interface:
       b: 0
     position_top: true
   start_pose_image_path: src/assets/human-body-pose-3d.png
-  counter:
-    font: FONT_HERSHEY_DUPLEX
-    font_scale: 3
-  double_counter:
-    font: FONT_HERSHEY_DUPLEX
-    font_scale: 2
-  message:
-    font: FONT_HERSHEY_SIMPLEX
-    font_scale: 2
-  title:
-    font: FONT_HERSHEY_SIMPLEX
-    font_scale: 3
-  sets:
-    font: FONT_HERSHEY_SIMPLEX
-    font_scale: 2
+  text_configs:
+    counter:
+      font: FONT_HERSHEY_DUPLEX
+      font_scale: 3
+    double_counter:
+      font: FONT_HERSHEY_DUPLEX
+      font_scale: 2
+    message:
+      font: FONT_HERSHEY_SIMPLEX
+      font_scale: 2
+    title:
+      font: FONT_HERSHEY_SIMPLEX
+      font_scale: 3
+    sets:
+      font: FONT_HERSHEY_SIMPLEX
+      font_scale: 2
+    timer:
+      font: FONT_HERSHEY_SIMPLEX
+      font_scale: 2
 
 logging:
   level: INFO

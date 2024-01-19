@@ -3,17 +3,11 @@ from .config import load_config
 
 config = load_config("configs/application.yaml")
 
-# Load counter config
-counter_config = config['interface']['counter']
-
-# Load double counter config
-double_counter_config = config['interface']['double_counter']
-
-# Load message config
-message_config = config['interface']['message']
-
-# Load title config
-title_config = config['interface']['title']
-
-# Load sets config
-sets_config = config['interface']['sets']
+# Load text configs
+text_config = config['interface']['text_configs']
+counter_config = text_config['counter']
+double_counter_config = text_config['double_counter']
+message_config = text_config['message']
+title_config = text_config['title']
+sets_config = text_config['sets']
+timer_config = text_config['timer']
