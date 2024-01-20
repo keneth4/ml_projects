@@ -1,9 +1,11 @@
 """Base model class for all counters in the application."""
 import time
+import math
 import cv2
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 from src.app import mp_pose
+from src.utils import numeric_menu_config
 
 # Create a Counter base class
 class Counter(ABC):
@@ -106,8 +108,20 @@ class Counter(ABC):
         self.counter -= 1
 
     def reset(self):
-        """Resets the counter to 0."""
+        """Resets counters to 0."""
         self.counter = 0
+        self.state = "start"
+        self.reps_per_set = None
+        self.num_sets = None
+        self.current_set = 1
+        self.reps_this_set = 0
+
+    def get_total_reps(self) -> int:
+        """
+        Returns:
+            int: The total number of reps.
+        """
+        return self.reps_per_set * self.num_sets
 
     def get_info(self):
         """
@@ -133,46 +147,53 @@ class ExerciseMenu:
             options (Dict[str, tuple]): A dictionary mapping exercise names to screen positions (x, y).
         """
         self.options = options
-        self.formated_options = [
-            {
-                "index" : i,
-                "image" : cv2.imread(option.image_path, cv2.IMREAD_UNCHANGED),
-                "title" : option.title
-            } for i, option in enumerate(options.copy())
-        ]
         self.width, self.height = screen_size
         self.selected_option = None
+        self.selected_reps = None
+        self.selected_sets = None
         self.right_hand_position = None
         self.left_hand_position = None
         self.start_time = None
         self.landmarks = None
         self.state = "start"
         self.output = {}
-        self.get_images_positions(self.width, self.height)
+        self.exercise_options = [
+            {
+                "index" : i,
+                "image" : cv2.imread(option.image_path, cv2.IMREAD_UNCHANGED),
+                "title" : option.title
+            } for i, option in enumerate(options.copy())
+        ]
+        self.calculate_images_positions()
+        numeric_options_range = [1, 10]
+        self.numeric_options = [
+            {
+                "index": i,
+                "text": str(i),
+                "position": self.calculate_position_for_number(i, numeric_options_range[0], numeric_options_range[1]),
+            }
+            for i in range(numeric_options_range[0], numeric_options_range[1] + 1)
+        ]
 
-    def get_images_positions(self, screen_width: int, screen_height: int) -> None:
+    def calculate_images_positions(self) -> None:
         """
         Calculate the positions for each exercise image on the screen.
-
-        Args:
-            screen_width (int): The width of the screen.
-            screen_height (int): The height of the screen.
         """
-        num_options = len(self.formated_options)
-        section_width = screen_width / num_options
+        num_options = len(self.exercise_options)
+        section_width = self.width / num_options
 
         # Set fixed size for exercise images based on section width
         image_width = section_width * 0.5
 
         # Scale the image height based on the fixed width
-        for option in self.formated_options:
+        for option in self.exercise_options:
             option["image"] = cv2.resize(option["image"], (int(image_width), int(image_width)))
 
-        for i, option in enumerate(self.formated_options):
+        for i, option in enumerate(self.exercise_options):
             # Calculate the center x position of the section
             center_x = (i * section_width) + (section_width / 2)
             # Calculate the center y position of the screen
-            center_y = screen_height / 2
+            center_y = self.height / 2
 
             # Adjust for the size of the image
             image_x = center_x - (image_width / 2)
@@ -181,6 +202,41 @@ class ExerciseMenu:
             # Update the position in the option dictionary
             option["position"] = (image_x, image_y)
 
+    def calculate_position_for_number(self, number: int, start: int, end: int) -> tuple:
+        """
+        Calculate screen position for a number option, arranged in a circular manner.
+
+        Args:
+            number (int): The number for which to calculate the position.
+            start (int): Starting number of the range.
+            end (int): Ending number of the range.
+
+        Returns:
+            tuple: Position (x, y) on the screen.
+        """
+        total_numbers = end - start + 1
+        angle_step = 360 / total_numbers  # Angle step in degrees
+
+        # Calculate the angle for this particular number
+        angle = angle_step * (number - start)
+
+        # Convert angle to radians for math calculations
+        angle_rad = math.radians(angle)
+
+        # Circle's center
+        circle_center_x = self.width // 2
+        y_offset = self.height // 20
+        circle_center_y = self.height // 2 + y_offset
+
+        # Circle's radius (1/4 of the screen height)
+        radius = (self.height // 3.5)
+
+        # Calculate position based on angle and radius
+        x = int(circle_center_x + radius * math.cos(angle_rad))
+        y = int(circle_center_y + radius * math.sin(angle_rad))
+
+        return (x, y)
+    
     def get_options_images_and_positions(self) -> List[Dict[str, Any]]:
         """
         Get the images and positions of the exercise options.
@@ -188,7 +244,16 @@ class ExerciseMenu:
         Returns:
             List[Dict[str, Any]]: A list of dictionaries containing the image and position of each exercise option.
         """
-        return self.formated_options
+        return self.exercise_options
+    
+    def get_numeric_options_positions(self) -> List[Dict[str, Any]]:
+        """
+        Get the positions of the numeric options.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries containing the position of each numeric option.
+        """
+        return self.numeric_options
     
     def generate_feedback(self, message: str = "Hold hand over an option to select") -> Dict[str, str]:
         """
@@ -217,30 +282,56 @@ class ExerciseMenu:
 
     def check_hands_position(self) -> None:
         """
-        Check if one of the hands is held over an option and for how long.
+        Check if one of the hands is held over an option (exercise, reps, or sets) and for how long.
+        """
+        if self.state == "selecting_reps":
+            self.check_selection(self.numeric_options, "selecting_sets", "Reps per set")
+        elif self.state == "selecting_sets":
+            self.check_selection(self.numeric_options, "finished", "Sets")
+        else:
+            self.check_selection(self.exercise_options, "selecting_reps", "Exercise")
+
+    def check_selection(self, options: List[Dict[str, Any]], next_state: str, selection_type: str) -> None:
+        """
+        Check if hands are over a specific option and handle the selection process.
+
+        Args:
+            options (List[Dict[str, Any]]): List of options to check against.
+            next_state (str): The next state to transition to after selection.
+            selection_type (str): Type of selection (Exercise, Reps, Sets).
         """
         hand_over_any_option = False
-        for option in self.formated_options:
+        for option in options:
             if self.is_hand_over_option(option):
                 hand_over_any_option = True
                 current_time = time.time()
                 if self.start_time is None:
                     self.start_time = current_time
-                elif current_time - self.start_time >= 3:  # 3 seconds threshold
-                    self.selected_option = self.options[option["index"]]
-                    self.state = "finished"
-                    return  # Exit the loop and method once an option is selected
+                elif current_time - self.start_time >= 3:
+                    if self.state == "selecting_reps":
+                        self.selected_reps = option['index']
+                    elif self.state == "selecting_sets":
+                        self.selected_sets = option['index']
+                    else:
+                        self.selected_option = option['index']
+                    self.state = next_state
+                    self.start_time = None
+                    self.output = self.generate_feedback()
                 else:
-                    self.output = self.generate_feedback(f"Starting {option['title']} in {3 - int(current_time - self.start_time)} secs")
+                    if self.state in ["selecting_reps", "selecting_sets"]:
+                        self.output = self.generate_feedback(f"Selecting {option['index']} {selection_type} in {3 - int(current_time - self.start_time)} secs")
+                    else:
+                        self.output = self.generate_feedback(f"Selecting {option['title']} in {3 - int(current_time - self.start_time)} secs")
+                break
 
         if not hand_over_any_option:
-            # Reset the timer only if neither hand is over any option
-            self.state = "start"
             self.start_time = None
-            self.output = self.generate_feedback()
+            if self.state in ["selecting_reps", "selecting_sets"]:
+                self.output = self.generate_feedback(f"Select number of {selection_type}")
+            else:
+                self.output = self.generate_feedback()
 
-
-    def is_hand_over_option(self, option: dict, threshold: float = 0.9) -> bool:
+    def is_hand_over_option(self, option: Dict, threshold: float = 0.9) -> bool:
         """
         Determine if the hand is over an option within a certain radius.
 
@@ -251,15 +342,28 @@ class ExerciseMenu:
         Returns:
             bool: True if one of the hands is over an option, False otherwise.
         """
-        image = option['image']
         position = option['position']
-        
-        # Calculate the centroid of the image
-        centroid_position = (position[0] + (image.shape[0] // 2),
-                            position[1] + (image.shape[1] // 2))
-        
-        # Create a circle area around the centroid with a radius of threshold * image width / 2
-        radius = threshold * image.shape[0] / 2
+
+        if 'image' in option:
+            image = option['image']
+            # Calculate the centroid of the image
+            centroid_position = (position[0] + (image.shape[0] // 2),
+                                position[1] + (image.shape[1] // 2))
+            
+            # Create a circle area around the centroid with a radius of threshold * image width / 2
+            radius = threshold * image.shape[0] / 2
+        else:
+            # No image, get text size and calculate centroid position
+            text = option['text']
+            font = getattr(cv2, numeric_menu_config["font"])
+            font_scale = numeric_menu_config["font_scale"]
+            thickness = font_scale * 2
+            text_size = cv2.getTextSize(text, font, font_scale, thickness)[0]
+            centroid_position = (position[0] + (text_size[0] // 2),
+                                position[1] + (text_size[1] // 2))
+            
+            # Create a circle area around the centroid with a radius of threshold * text width / 2
+            radius = threshold * text_size[0] * 2
 
         # Calculate the distances of each hand from the centroid
         right_hand_distance = ((self.right_hand_position[0] - centroid_position[0]) ** 2 + (self.right_hand_position[1] - centroid_position[1]) ** 2) ** 0.5
@@ -268,7 +372,6 @@ class ExerciseMenu:
         # Check if either hand is within the radius
         return right_hand_distance <= radius or left_hand_distance <= radius
 
-
     def get_selected_option(self) -> Counter:
         """
         Get the currently selected exercise option.
@@ -276,7 +379,9 @@ class ExerciseMenu:
         Returns:
             str: The selected exercise option, or None if no selection has been made.
         """
-        return self.selected_option
+        setattr(self.options[int(self.selected_option)], "reps_per_set", self.selected_reps)
+        setattr(self.options[int(self.selected_option)], "num_sets", self.selected_sets)
+        return self.options[int(self.selected_option)]
     
     def run(self, landmarks: List[mp_pose.PoseLandmark]) -> None:
         """

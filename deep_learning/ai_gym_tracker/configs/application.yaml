@@ -46,6 +46,9 @@ interface:
     timer:
       font: FONT_HERSHEY_SIMPLEX
       font_scale: 2
+    numeric_menu:
+      font: FONT_HERSHEY_SIMPLEX
+      font_scale: 2
 
 logging:
   level: INFO

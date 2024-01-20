@@ -15,8 +15,8 @@ class CurlCounter(Counter, CounterUtils):
         min_angle: int,
         max_angle: int,
         image_path: str,
-        num_sets: int,
-        reps_per_set: int,
+        num_sets: int = 0,
+        reps_per_set: int = 0,
     ) -> None:
         """
         Class for counting bicep curls.
@@ -162,8 +162,20 @@ class CurlCounter(Counter, CounterUtils):
 
         # Change state to finished and set counter to max reps if the user is finished
         if self.is_finished():
-            self.counter = self.reps_per_set * self.num_sets
             self.state = 'finished'
+
+    
+    def reset_counter(self) -> None:
+        """
+        Resets the counter.
+        """
+        self.reset()
+        self.current_right_angle = self.max_angle
+        self.current_left_angle = self.max_angle
+        self.right_counter = 0
+        self.left_counter = 0
+        self.right_state = 'start'
+        self.left_state = 'start'
 
 
 class SquatCounter(Counter, CounterUtils):
@@ -175,8 +187,8 @@ class SquatCounter(Counter, CounterUtils):
         min_angle: int,
         max_angle: int,
         image_path: str,
-        num_sets: int,
-        reps_per_set: int,
+        num_sets: int = 0,
+        reps_per_set: int = 0,
     ) -> None:
         """
         Class for counting squats.
@@ -306,3 +318,11 @@ class SquatCounter(Counter, CounterUtils):
         # Change state to finished and set counter to max reps if the user is finished
         if self.is_finished():
             self.state = 'finished'
+    
+
+    def reset_counter(self) -> None:
+        """
+        Resets the counter.
+        """
+        self.reset()
+        self.current_angle = self.max_angle

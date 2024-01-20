@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 
 from src.app import mp_pose, mp_drawing, stats_background_color, stats_position_top
-from src.utils import counter_config, double_counter_config, message_config, title_config, sets_config, timer_config
+from src.utils import counter_config, double_counter_config, message_config, title_config, sets_config, timer_config, numeric_menu_config
 
 # Create counters utils class
 class CounterUtils:
@@ -137,7 +137,8 @@ class VideoCaptureUtils:
             Tuple[int, int]: Position of the text on the screen.
         """
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
-        return (30, text_size[1] * 2 + 10)
+        x_offset = img_size[0] // 25
+        return (x_offset, text_size[1] * 2)
 
 
     def draw_text_with_border(self, image: np.ndarray, text: str, position: Tuple[int, int], font: int, font_scale: int, thickness: int, color: Tuple[int, int, int], border_thickness: int) -> None:
@@ -164,7 +165,7 @@ class VideoCaptureUtils:
         cv2.putText(image, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
 
 
-    def configure_text_settings(self, text_type: str, image: np.ndarray, text: Union[str, List[str]]) -> Tuple:
+    def configure_text_settings(self, text_type: str, img_size: Tuple[int, int], text: Union[str, List[str]]) -> Tuple:
         """
         Configures text settings based on the type of text (counter or message).
 
@@ -180,13 +181,13 @@ class VideoCaptureUtils:
             font = getattr(cv2, counter_config["font"])
             font_scale = counter_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_top_right_screen_text_position(text, font, font_scale, thickness, image.shape)
+            position = self.get_top_right_screen_text_position(text, font, font_scale, thickness, img_size)
         elif text_type == "double_counter":
             font = getattr(cv2, double_counter_config["font"])
             font_scale = double_counter_config["font_scale"]
             thickness = font_scale * 2
-            positionl = self.get_top_right_screen_text_position(text[0], font, font_scale, thickness, image.shape)
-            positionr = self.get_top_right_screen_text_position(text[1], font, font_scale, thickness, image.shape)
+            positionl = self.get_top_right_screen_text_position(text[0], font, font_scale, thickness, img_size)
+            positionr = self.get_top_right_screen_text_position(text[1], font, font_scale, thickness, img_size)
             text_height = cv2.getTextSize("0", font, font_scale, thickness)[0][1]
             r_y_offset = text_height + text_height // 2
             y_neg_offset = - text_height // 2
@@ -198,17 +199,17 @@ class VideoCaptureUtils:
             font = getattr(cv2, message_config["font"])
             font_scale = message_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_bottom_center_screen_text_position(text, font, font_scale, thickness, image.shape)
+            position = self.get_bottom_center_screen_text_position(text, font, font_scale, thickness, img_size)
         elif text_type == "title":
             font = getattr(cv2, title_config["font"])
             font_scale = title_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_top_center_screen_text_position(text, font, font_scale, thickness, image.shape)
+            position = self.get_top_center_screen_text_position(text, font, font_scale, thickness, img_size)
         elif text_type == "sets":
             font = getattr(cv2, sets_config["font"])
             font_scale = sets_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_top_left_screen_text_position(text, font, font_scale, thickness, image.shape)
+            position = self.get_top_left_screen_text_position(text, font, font_scale, thickness, img_size)
 
         border_thickness = thickness + 2
         return font, font_scale, thickness, position, border_thickness
@@ -240,11 +241,11 @@ class VideoCaptureUtils:
             if text := output.get(text_type, ""):
                 if isinstance(text, list):
                     text = [f"L {text[0]}/{output.get('reps_per_set', '')}", f"R {text[1]}/{output.get('reps_per_set', '')}"]
-                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings('double_counter', image, text)
+                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings('double_counter', image.shape, text)
                     self.draw_text_with_border(image, text[0], position[0], font, font_scale, thickness, (255, 255, 255), border_thickness)
                     self.draw_text_with_border(image, text[1], position[1], font, font_scale, thickness, (255, 255, 255), border_thickness)
                 else:
-                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings(text_type, image, text)
+                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings(text_type, image.shape, text)
                     self.draw_text_with_border(image, text, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
 
 
@@ -295,7 +296,7 @@ class VideoCaptureUtils:
         return cv2.addWeighted(silhouette, opacity, image, 1 - opacity, 0)
     
 
-    def draw_menu_images(self, options: list, image: np.ndarray) -> np.ndarray:
+    def draw_menu_images(self, options: List, image: np.ndarray) -> np.ndarray:
         """
         Draws the menu images on a given frame.
 
@@ -326,4 +327,26 @@ class VideoCaptureUtils:
                 image[int(position[1]):int(position[1]) + menu_image.shape[0], int(position[0]):int(position[0]) + menu_image.shape[1]][mask] = menu_image[mask]
 
         return image
+    
 
+    def draw_numeric_menu(self, options: List, image: np.ndarray) -> None:
+        """
+        Draws the numeric menu on a given frame.
+
+        Args:
+            options (list): A list of dictionaries containing the menu options.
+            image (np.ndarray): The frame (image) to draw the numeric menu on.
+
+        Returns:
+            np.ndarray: The updated frame with numeric menu drawn.
+        """
+        for option in options:
+            text = option['text']
+            position = option['position']
+            font = getattr(cv2, numeric_menu_config["font"])
+            font_scale = numeric_menu_config["font_scale"]
+            thickness = font_scale * 2
+            color = (255, 255, 255)
+            border_thickness = thickness + 2
+
+            self.draw_text_with_border(image, text, position, font, font_scale, thickness, color, border_thickness)

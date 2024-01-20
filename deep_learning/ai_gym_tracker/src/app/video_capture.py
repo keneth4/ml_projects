@@ -1,7 +1,8 @@
 """Video capture class."""
 import contextlib
-import cv2
 from typing import List
+import traceback
+import cv2
 
 from src.utils.utils import VideoCaptureUtils
 from src.app.models import Counter, ExerciseMenu
@@ -62,7 +63,7 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         """
         menu = ExerciseMenu(options, (self.width, self.height))
         with mp_pose.Pose(min_detection_confidence=self.min_detection_confidence, min_tracking_confidence=self.min_tracking_confidence) as pose:
-            while self.cap.isOpened() and menu.state != "finished":
+            while self.cap.isOpened():
                 _, image = self.cap.read()
 
                 # Flip image horizontally
@@ -88,7 +89,10 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
                     menu.run(landmarks.landmark)
 
                     # Render menu
-                    image = self.draw_menu_images(menu.get_options_images_and_positions(), image)
+                    if menu.state == "start":
+                        image = self.draw_menu_images(menu.get_options_images_and_positions(), image)
+                    else:
+                        self.draw_numeric_menu(menu.get_numeric_options_positions(), image)
 
                     # Render output
                     self.draw_output_on_image(menu.output, image)
@@ -102,7 +106,8 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     break
 
-        return menu.get_selected_option()
+                if menu.state == "finished":
+                    return menu.get_selected_option()
 
         
     def run_counter(self, pose_counter: Counter) -> None:
