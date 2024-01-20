@@ -30,10 +30,37 @@ One of the core functionalities of AI Gym Tracker is the ability to count exerci
 To run AI Gym Tracker, follow these steps:
 
 1. Clone or download this repository to your local machine.
-2. Ensure that you have Python installed, along with the necessary dependencies (listed in `requirements.txt`).
-3. Navigate to the root folder of the project in your command line or terminal.
-4. Run the application using the command:
-
+```
+    git clone https://github.com/keneth4/ml_projects.git
+    cd ml_projects/deep_learning/ai_gym_tracker
+```
+2. Create a virtual environment.
+    - On Windows:
+    ```
+        python -m venv venv
+    ```
+    - On macOS and Linux:
+    ```
+        python3 -m venv venv
+    ```
+3. Activate the virtual environment.
+    - On Windows:
+    ```
+        .\venv\Scripts\activate
+    ```
+    - On macOS and Linux:
+    ```
+        source venv/bin/activate
+    ```
+4. Ensure that you have Python installed, along with the necessary dependencies (listed in `requirements.txt`).
+```
+    pip install -r requirements.txt
+```
+5. Navigate to the root folder of the project in your command line or terminal.
+```
+    cd ai-gym-tracker
+```
+6. Run the application using the command:
 ```
     python -m src.app.main
 ```
