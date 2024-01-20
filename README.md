@@ -22,7 +22,7 @@ Dive into a collection of projects encompassing diverse domains of data science,
 1. 🔢 [**LeNet5 MNIST Tensorflow**](https://github.com/keneth4/ml_projects/blob/main/deep_learning/1.%20LeNet5%20MNIST%20Tensorflow.ipynb): LeNet-5 with TensorFlow for MNIST digit recognition.
 2. 🧑 [**ResNet50 Age-Estimation Tensorflow**](https://github.com/keneth4/ml_projects/blob/main/deep_learning/2.%20ResNet50%20Age-Estimation%20Tensorflow.ipynb): ResNet50-based age prediction fine-tuned in TensorFlow.
 3. 🎬 [**BERT Sentiment-Analysis Pytorch**](https://github.com/keneth4/ml_projects/blob/main/deep_learning/3.%20BERT%20Sentiment-Analysis%20Pytorch.ipynb): BERT for sentiment analysis in classic movie reviews with PyTorch.
-4. 🏋️ [**AI Gym Tracker**](https://github.com/keneth4/ml_projects/tree/ai_gym_tracker_project/deep_learning/ai_gym_tracker): Deployable fitness tracking system using MediaPipe for real-time analysis and gesture interaction.
+4. 🏋️ [**AI Gym Tracker**](https://github.com/keneth4/ml_projects/tree/main/deep_learning/ai_gym_tracker): Deployable fitness tracking system using MediaPipe for real-time analysis and gesture interaction.
 
 ---
 
