@@ -166,8 +166,10 @@ class ExerciseMenu:
         self.left_hand_position: Optional[tuple]
         self.start_time: Optional[float]
         self.landmarks: Optional[List[mp_pose.PoseLandmark]]
+        self.tentative_option: Optional[int]
         self.state: str
         self.state_changed: bool
+        self.tentative_option_changed: bool
         self.output: Dict[str, str]
         self.load_attrs()
 
@@ -209,8 +211,10 @@ class ExerciseMenu:
         self.left_hand_position = None
         self.start_time = None
         self.landmarks = None
+        self.tentative_option = None
         self.state = "start"
         self.state_changed = False
+        self.tentative_option_changed = False
         self.output = {}
 
     def calculate_images_positions(self) -> None:
@@ -325,6 +329,18 @@ class ExerciseMenu:
             self.state_changed = False
             return True
         return False
+    
+    def get_tentative_option_changed(self) -> bool:
+        """
+        Check if the selected option has changed.
+
+        Returns:
+            bool: True if the selected option has changed, False otherwise.
+        """
+        if self.tentative_option_changed:
+            self.tentative_option_changed = False
+            return True
+        return False
 
     def check_selection(self, options: List[Dict[str, Any]], next_state: str, selection_type: str) -> None:
         """
@@ -340,6 +356,9 @@ class ExerciseMenu:
         for option in options:
             if self.is_hand_over_option(option):
                 hand_over_any_option = True
+                if self.tentative_option != option['index']:
+                    self.tentative_option = option['index']
+                    self.tentative_option_changed = True
                 if self.start_time is None:
                     self.start_time = current_time
                 elif current_time - self.start_time >= 3:

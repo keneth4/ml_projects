@@ -6,7 +6,13 @@ import cv2
 
 from src.utils.utils import VideoCaptureUtils
 from src.app.models import Counter, ExerciseMenu
-from src.app import mp_pose, min_detection_confidence, min_tracking_confidence, window_name, start_pose_image_path
+from src.app import (
+    mp_pose,
+    min_detection_confidence,
+    min_tracking_confidence,
+    window_name,
+    start_pose_image_path,
+    sound_config)
 
 
 # Create a video capture class, generalizing the code above
@@ -130,6 +136,12 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
             # Render detections
             if self.show_landmarks:
                 self.draw_landmarks(image, landmarks)
+
+            # Play option sound
+            if self.menu.get_state_changed():
+                self.play_sound(sound_config['success'])
+            if self.menu.get_tentative_option_changed():
+                self.play_sound(sound_config['select'])
 
         if self.menu.state == "finished":
             self.counter = self.menu.get_selected_option()

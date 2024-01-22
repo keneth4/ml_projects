@@ -1,6 +1,7 @@
 """Utility classes for the AI Gym Tracker application."""
 from typing import Tuple, List, Dict, Union
 import numpy as np
+import simpleaudio as sa
 import cv2
 
 from src.app import mp_pose, mp_drawing, stats_background_color, stats_position_top
@@ -294,7 +295,7 @@ class VideoCaptureUtils:
 
         # Now blend the silhouette with the background image
         return cv2.addWeighted(silhouette, opacity, image, 1 - opacity, 0)
-    
+
 
     def draw_menu_images(self, options: List, image: np.ndarray) -> np.ndarray:
         """
@@ -327,7 +328,7 @@ class VideoCaptureUtils:
                 image[int(position[1]):int(position[1]) + menu_image.shape[0], int(position[0]):int(position[0]) + menu_image.shape[1]][mask] = menu_image[mask]
 
         return image
-    
+
 
     def draw_numeric_menu(self, options: List, image: np.ndarray) -> None:
         """
@@ -350,3 +351,15 @@ class VideoCaptureUtils:
             border_thickness = thickness + 2
 
             self.draw_text_with_border(image, text, position, font, font_scale, thickness, color, border_thickness)
+
+
+    @staticmethod
+    def play_sound(file_path):
+        """
+        Plays a sound file.
+
+        Args:
+            file_path (str): The path to the sound file.
+        """
+        wave_obj = sa.WaveObject.from_wave_file(file_path)
+        wave_obj.play()

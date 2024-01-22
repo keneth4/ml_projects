@@ -18,6 +18,9 @@ interface_config = config['interface']
 window_name = interface_config['window_name']
 start_pose_image_path = interface_config['start_pose_image_path']
 
+# Load sound config
+sound_config = interface_config['sound']
+
 # Load stats bar config
 stats_bar_config = interface_config['stats_bar']
 stats_background_color = (
