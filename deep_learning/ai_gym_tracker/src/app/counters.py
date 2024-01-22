@@ -15,8 +15,6 @@ class CurlCounter(Counter, CounterUtils):
         min_angle: int,
         max_angle: int,
         image_path: str,
-        num_sets: int = 0,
-        reps_per_set: int = 0,
     ) -> None:
         """
         Class for counting bicep curls.
@@ -24,33 +22,38 @@ class CurlCounter(Counter, CounterUtils):
         Args:
             min_angle (int): Minimum angle of the elbow
             max_angle (int): Maximum angle of the elbow
+            image_path (str): Path to the exercise example image
             num_sets (int): Number of sets
             reps_per_set (int): Number of reps per set
         """
-        super().__init__(
-            title="Bicep Curls",
-            image_path=image_path,
-            reps_per_set=reps_per_set,
-            num_sets=num_sets)
+        super().__init__(title="Bicep Curls", image_path=image_path)
         self.min_angle = min_angle
         self.max_angle = max_angle
 
-        self.current_right_angle = max_angle
-        self.current_left_angle = max_angle
+        self.right_counter: int
+        self.left_counter: int
+        self.right_state: str
+        self.left_state: str
 
+        self.reset()
+
+    def reset(self) -> None:
+        """
+        Resets the counter to the starting position.
+        """
+        self.reset_base()
+        self.current_right_angle = self.max_angle
+        self.current_left_angle = self.max_angle
         self.right_counter = 0
         self.left_counter = 0
-
         self.right_state = 'start'
         self.left_state = 'start'
-
 
     def get_used_landmarks(self):
         """
         Returns the important landmarks for the exercise.
         """
         return self.landmarks[:25] # From nose to right hip
-    
 
     def generate_feedback(self, message: str) -> Dict[str, str]:
         """
@@ -63,7 +66,6 @@ class CurlCounter(Counter, CounterUtils):
             "reps_per_set": self.reps_per_set,
             "message": message
         }
-    
 
     def set_starting_pose(self, message: str = "Please stand in the starting position") -> None:
         """
@@ -76,7 +78,6 @@ class CurlCounter(Counter, CounterUtils):
         self.current_right_angle = self.max_angle
         self.current_left_angle = self.max_angle
 
-
     def arm_counting_cycle(self, side: str) -> None:
         """
         Counts the number of bicep curls for a single arm.
@@ -87,7 +88,6 @@ class CurlCounter(Counter, CounterUtils):
         if self.__getattribute__(f"current_{side}_angle") < self.min_angle and self.__getattribute__(f"{side}_state") == 'down':
             self.__setattr__(f"{side}_state", 'up')
             self.output = self.generate_feedback("Slowly curl down")
-
 
     def check_completed_set(self) -> None:
         """
@@ -102,7 +102,6 @@ class CurlCounter(Counter, CounterUtils):
             self.left_counter = 0
             self.current_right_angle = self.max_angle
             self.current_left_angle = self.max_angle
-
 
     def make_calculations(self) -> None:
         """
@@ -124,7 +123,6 @@ class CurlCounter(Counter, CounterUtils):
         LEFT_ELBOW = [self.landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].x, self.landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW.value].y]
         LEFT_WRIST = [self.landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].x, self.landmarks[mp_pose.PoseLandmark.RIGHT_WRIST.value].y]
         self.current_left_angle = self.calculate_angle_3p(LEFT_SHOULDER, LEFT_ELBOW, LEFT_WRIST)
-
 
     def count(self) -> None:
         """
@@ -166,19 +164,6 @@ class CurlCounter(Counter, CounterUtils):
         if self.is_finished():
             self.state = 'finished'
 
-    
-    def reset(self) -> None:
-        """
-        Resets the counter.
-        """
-        self.reset_base()
-        self.current_right_angle = self.max_angle
-        self.current_left_angle = self.max_angle
-        self.right_counter = 0
-        self.left_counter = 0
-        self.right_state = 'start'
-        self.left_state = 'start'
-
 
 class SquatCounter(Counter, CounterUtils):
     """
@@ -188,9 +173,7 @@ class SquatCounter(Counter, CounterUtils):
         self,
         min_angle: int,
         max_angle: int,
-        image_path: str,
-        num_sets: int = 0,
-        reps_per_set: int = 0,
+        image_path: str
     ) -> None:
         """
         Class for counting squats.
@@ -198,28 +181,28 @@ class SquatCounter(Counter, CounterUtils):
         Args:
             min_angle (int): Minimum angle of the knees (usually at the bottom of the squat)
             max_angle (int): Maximum angle of the knees (standing position)
-            num_sets (int): Number of sets
-            reps_per_set (int): Number of reps per set
+            image_path (str): Path to the exercise example image
         """
-        super().__init__(
-            title="Squats",
-            image_path=image_path,
-            reps_per_set=reps_per_set,
-            num_sets=num_sets)
+        super().__init__(title="Squats", image_path=image_path)
         self.min_angle = min_angle
         self.max_angle = max_angle
 
-        self.current_angle = max_angle
-        self.counter = 0
-        self.state = 'start'
+        self.current_angle: int
 
+        self.reset()
+
+    def reset(self) -> None:
+        """
+        Resets the counter to the starting position.
+        """
+        self.reset_base()
+        self.current_angle = self.max_angle
 
     def get_used_landmarks(self):
         """
         Returns the important landmarks for the squat exercise.
         """
         return self.landmarks[23:29] # From left hip to right ankle
-    
 
     def generate_feedback(self, message: str) -> Dict[str, str]:
         """
@@ -231,7 +214,6 @@ class SquatCounter(Counter, CounterUtils):
             "sets": f"Set {self.current_set}/{self.num_sets}",
             "message": message
         }
-    
 
     def set_starting_pose(self, message: str = "Please stand in the starting position") -> None:
         """
@@ -240,7 +222,6 @@ class SquatCounter(Counter, CounterUtils):
         self.state = 'start'
         self.output = self.generate_feedback(message)
         self.current_angle = self.max_angle
-
 
     def squat_counting_cycle(self) -> None:
         """
@@ -252,7 +233,6 @@ class SquatCounter(Counter, CounterUtils):
         elif self.current_angle <= self.min_angle and self.state == 'up':
             self.state = 'down'
 
-
     def check_completed_set(self) -> None:
         """
         Update and reset counters after a set is completed.
@@ -263,7 +243,6 @@ class SquatCounter(Counter, CounterUtils):
             self.reps_this_set = 0
             self.reps_this_set = 0
             self.current_angle = self.max_angle
-
 
     def make_calculations(self) -> None:
         """
@@ -288,7 +267,6 @@ class SquatCounter(Counter, CounterUtils):
 
         # Update the current angle to the average of the left and right knee angles
         self.current_angle = np.mean([current_left_knee_angle, current_right_knee_angle])
-
 
     def count(self) -> None:
         """
@@ -320,11 +298,3 @@ class SquatCounter(Counter, CounterUtils):
         # Change state to finished and set counter to max reps if the user is finished
         if self.is_finished():
             self.state = 'finished'
-    
-
-    def reset(self) -> None:
-        """
-        Resets the counter.
-        """
-        self.reset_base()
-        self.current_angle = self.max_angle

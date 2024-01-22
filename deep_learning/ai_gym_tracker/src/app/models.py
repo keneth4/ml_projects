@@ -14,57 +14,60 @@ class Counter(ABC):
 
     Attributes
     ------
-    counter : int
-        The current global count.
     title : str
-        The title of the counter.
-    reps_per_set : Optional[int]
-        The number of reps per set.
-    num_sets : Optional[int]
-        The number of sets.
-    current_set : int
-        The current set.
-    reps_this_set : int
-        The number of reps this set.
-    landmarks : List[mp_pose.PoseLandmark]
-        List of detected landmarks.
+        Title of the counter base class.
+    image_path : str
+        Path to the exercise example image.
+    counter : int
+        Current global count.
     state : str
-        The current state.
+        Current state of the counter.
     output : Dict[str, str]
-        The output of the counter.
-        Must be in the format 
+        Output of the counter.
+        Must be in the following format:
         {
             "counter": # Can be a string, int, or list. Lists are used for both sides/arms counters.
             "message": "", # The current message shown to the user.
             "sets": "" # current set / total sets
             "reps": self.reps_per_set, # Only used when counter us list.
         }
+    reps_per_set : int
+        Number of reps per set.
+    num_sets : Optional[int]
+        Number of sets.
+    current_set : int
+        Current set number.
+    reps_this_set : int
+        Current reps count for the current set.
+    landmarks : List[mp_pose.PoseLandmark]
+        List of detected landmarks.
     """
     def __init__(
         self,
         title: str,
-        image_path: str,
-        reps_per_set: Optional[int],
-        num_sets: Optional[int]
+        image_path: str
     ) -> None:
         """
+        Initialize the Counter base class.
+
         Args:
-            state (str): The current state.
-            output (Dict[str, str]): The output.
-            reps_per_set (Optional[int]): The number of reps per set.
-            num_sets (Optional[int]): The number of sets.
+            title (str): Title of the counter
+            image_path (str): Path to the exercise example image
         """
+        self.title = title
+        self.image_path = image_path
+
         self.counter: int
         self.state: str
         self.output: Dict[str, str]
+        self.reps_per_set: int
+        self.num_sets: int
         self.current_set: int
         self.reps_this_set: int
         self.landmarks: List[mp_pose.PoseLandmark]
+        self.start_time: Optional[float]
+        self.current_time: Optional[float]
 
-        self.title = title
-        self.image_path = image_path
-        self.reps_per_set = reps_per_set
-        self.num_sets = num_sets
         self.reset_base()
 
     def reset_base(self):
@@ -72,9 +75,13 @@ class Counter(ABC):
         self.counter = 0
         self.state = "start"
         self.output = {}
+        self.reps_per_set = 0
+        self.num_sets = 0
         self.current_set = 1
         self.reps_this_set = 0
         self.landmarks = []
+        self.start_time = None
+        self.current_time = None
 
     @abstractmethod
     def reset(self):
@@ -157,6 +164,7 @@ class ExerciseMenu:
         """
         self.options = options
         self.width, self.height = screen_size
+
         self.selected_option: Optional[int]
         self.selected_reps: Optional[int]
         self.selected_sets: Optional[int]
@@ -430,6 +438,13 @@ class ExerciseMenu:
         # Check if either hand is within the radius
         return right_hand_distance <= radius or left_hand_distance <= radius
 
+    def set_number_of_reps_and_sets_on_selected_option(self) -> None:
+        """
+        Set the number of reps and sets on the selected exercise option.
+        """
+        setattr(self.options[int(self.selected_option)], "reps_per_set", self.selected_reps)
+        setattr(self.options[int(self.selected_option)], "num_sets", self.selected_sets)
+
     def get_selected_option(self) -> Counter:
         """
         Get the currently selected exercise option.
@@ -437,8 +452,7 @@ class ExerciseMenu:
         Returns:
             str: The selected exercise option, or None if no selection has been made.
         """
-        setattr(self.options[int(self.selected_option)], "reps_per_set", self.selected_reps)
-        setattr(self.options[int(self.selected_option)], "num_sets", self.selected_sets)
+        self.set_number_of_reps_and_sets_on_selected_option()
         return self.options[int(self.selected_option)]
     
     def run(self, landmarks: List[mp_pose.PoseLandmark]) -> None:
