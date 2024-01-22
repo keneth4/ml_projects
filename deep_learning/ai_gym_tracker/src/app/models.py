@@ -82,6 +82,13 @@ class Counter(ABC):
         """
         ...
 
+    @abstractmethod
+    def reset(self):
+        """
+        Resets the counter to its initial state.
+        """
+        ...
+
     def run(self, landmarks: List[mp_pose.PoseLandmark]) -> int:
         """
         Args:
@@ -107,7 +114,7 @@ class Counter(ABC):
         """Decrements the counter by 1."""
         self.counter -= 1
 
-    def reset(self):
+    def reset_base(self):
         """Resets counters to 0."""
         self.counter = 0
         self.state = "start"
@@ -121,6 +128,9 @@ class Counter(ABC):
         Returns:
             int: The total number of reps.
         """
+        if self.state != "finished":
+            return self.counter
+
         return self.reps_per_set * self.num_sets
 
     def get_info(self):
@@ -148,6 +158,46 @@ class ExerciseMenu:
         """
         self.options = options
         self.width, self.height = screen_size
+        self.selected_option: Optional[int]
+        self.selected_reps: Optional[int]
+        self.selected_sets: Optional[int]
+        self.last_selected_num_option: Dict[str, Optional[int]]
+        self.right_hand_position: Optional[tuple]
+        self.left_hand_position: Optional[tuple]
+        self.start_time: Optional[float]
+        self.landmarks: Optional[List[mp_pose.PoseLandmark]]
+        self.state: str
+        self.state_changed: bool
+        self.output: Dict[str, str]
+        self.load_attrs()
+
+    def load_attrs(self) -> None:
+        """
+        Load the attributes for the menu.
+        """
+        self.reset()
+        self.exercise_options = [
+            {
+                "index" : i,
+                "image" : cv2.imread(option.image_path, cv2.IMREAD_UNCHANGED),
+                "title" : option.title
+            } for i, option in enumerate(self.options.copy())
+        ]
+        self.calculate_images_positions()
+        numeric_options_range = [1, 10]
+        self.numeric_options = [
+            {
+                "index": i,
+                "text": str(i),
+                "position": self.calculate_position_for_number(i, numeric_options_range[0], numeric_options_range[1]),
+            }
+            for i in range(numeric_options_range[0], numeric_options_range[1] + 1)
+        ]
+
+    def reset(self) -> None:
+        """
+        Reset the menu to its initial state.
+        """
         self.selected_option = None
         self.selected_reps = None
         self.selected_sets = None
@@ -162,23 +212,6 @@ class ExerciseMenu:
         self.state = "start"
         self.state_changed = False
         self.output = {}
-        self.exercise_options = [
-            {
-                "index" : i,
-                "image" : cv2.imread(option.image_path, cv2.IMREAD_UNCHANGED),
-                "title" : option.title
-            } for i, option in enumerate(options.copy())
-        ]
-        self.calculate_images_positions()
-        numeric_options_range = [1, 10]
-        self.numeric_options = [
-            {
-                "index": i,
-                "text": str(i),
-                "position": self.calculate_position_for_number(i, numeric_options_range[0], numeric_options_range[1]),
-            }
-            for i in range(numeric_options_range[0], numeric_options_range[1] + 1)
-        ]
 
     def calculate_images_positions(self) -> None:
         """
@@ -226,7 +259,7 @@ class ExerciseMenu:
         x = int((index * section_width) + x_offset)
         y = int(self.height / 2)
         return (x, y)
-    
+
     def get_options_images_and_positions(self) -> List[Dict[str, Any]]:
         """
         Get the images and positions of the exercise options.
@@ -235,7 +268,7 @@ class ExerciseMenu:
             List[Dict[str, Any]]: A list of dictionaries containing the image and position of each exercise option.
         """
         return self.exercise_options
-    
+
     def get_numeric_options_positions(self) -> List[Dict[str, Any]]:
         """
         Get the positions of the numeric options.
@@ -244,7 +277,7 @@ class ExerciseMenu:
             List[Dict[str, Any]]: A list of dictionaries containing the position of each numeric option.
         """
         return self.numeric_options
-    
+
     def generate_feedback(self, message: str = "Hold palm over an option to select") -> Dict[str, str]:
         """
         Generate feedback for the user.

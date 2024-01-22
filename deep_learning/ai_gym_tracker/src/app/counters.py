@@ -94,6 +94,7 @@ class CurlCounter(Counter, CounterUtils):
         Update and reset counters after a set is completed.
         """
         self.reps_this_set = self.right_counter + self.left_counter
+        self.counter = self.reps_this_set // 2 + (self.reps_per_set * (self.current_set - 1))
         if self.reps_this_set == self.reps_per_set * 2:
             self.current_set += 1
             self.reps_this_set = 0
@@ -141,6 +142,7 @@ class CurlCounter(Counter, CounterUtils):
 
         # While both arms are down, display the percentage of the curl up
         if self.right_state == 'down' and self.left_state == 'down':
+            # Calculate the percentage of the curl up for each arm
             right_percentage = round(round(1 - (self.current_right_angle - self.min_angle) / (self.max_angle - self.min_angle), 2) * 100)
             left_percentage = round(round(1 - (self.current_left_angle - self.min_angle) / (self.max_angle - self.min_angle), 2) * 100)
 
@@ -165,11 +167,11 @@ class CurlCounter(Counter, CounterUtils):
             self.state = 'finished'
 
     
-    def reset_counter(self) -> None:
+    def reset(self) -> None:
         """
         Resets the counter.
         """
-        self.reset()
+        self.reset_base()
         self.current_right_angle = self.max_angle
         self.current_left_angle = self.max_angle
         self.right_counter = 0
@@ -320,9 +322,9 @@ class SquatCounter(Counter, CounterUtils):
             self.state = 'finished'
     
 
-    def reset_counter(self) -> None:
+    def reset(self) -> None:
         """
         Resets the counter.
         """
-        self.reset()
+        self.reset_base()
         self.current_angle = self.max_angle

@@ -1,7 +1,7 @@
 """Video capture class."""
 import contextlib
-from typing import List
-import traceback
+from typing import List, Tuple
+import numpy as np
 import cv2
 
 from src.utils.utils import VideoCaptureUtils
@@ -39,10 +39,18 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         self.show_landmarks = show_landmarks
         self.min_detection_confidence = min_detection_confidence
         self.min_tracking_confidence = min_tracking_confidence
+        self.options: List[Counter] = []
+        self.menu: ExerciseMenu = None
+        self.pose = mp_pose.Pose(min_detection_confidence=self.min_detection_confidence, min_tracking_confidence=self.min_tracking_confidence)
+        self.counter: Counter = None
+        self.start_pose_image: np.ndarray = cv2.imread(start_pose_image_path, cv2.IMREAD_UNCHANGED)
+        self.exit = False
+
         print(f"VideoCapture: {self.width}x{self.height}")
 
 
     def __enter__(self):
+        self.pose.__enter__()
         return self
 
 
@@ -50,8 +58,85 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         self.cap.release()
         cv2.destroyAllWindows()
 
+
+    def load_options(self, options: List[Counter]) -> None:
+        """
+        Loads the options to choose from.
+
+        Args:
+            options (List[Counter]): The options to choose from.
+        """
+        self.options = options
+        print(f"Loaded {[option.title for option in self.options]}")
+        self.menu = ExerciseMenu(options, (self.width, self.height))
+
+
+    def process_result_frame(self, image: np.ndarray) -> Tuple[np.ndarray, mp_pose.PoseLandmark]:
+        """
+        Processes a frame from the video capture.
+
+        Args:
+            image (np.ndarray): The image to process.
+
+        Returns:
+            mp_pose.PoseLandmark: The landmark of the detected pose.
+        """
+        # Flip image horizontally
+        if self.flip:
+            image = cv2.flip(image, 1)
+
+        # Recolor feed
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image.flags.writeable = False
+
+        # Make detection
+        results = self.pose.process(image)
+
+        # Recolor image back to BGR
+        image.flags.writeable = True
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+        return (image, results)
     
-    def run_menu(self, options: List[Counter]) -> Counter:
+
+    def process_menu_frame(self, image: np.ndarray) -> np.ndarray:
+        """
+        Processes a frame from the video capture.
+
+        Args:
+            image (np.ndarray): The image to process.
+
+        Returns:
+            Union[Counter, np.ndarray]: The chosen counter or the processed image.
+        """
+        image, results = self.process_result_frame(image)
+
+        # Extract landmarks
+        with contextlib.suppress(Exception):
+            landmarks = results.pose_landmarks
+
+            # Run menu
+            self.menu.run(landmarks.landmark)
+
+            # Render menu
+            if self.menu.state == "start":
+                image = self.draw_menu_images(self.menu.get_options_images_and_positions(), image)
+            else:
+                self.draw_numeric_menu(self.menu.get_numeric_options_positions(), image)
+
+            # Render output
+            self.draw_output_on_image(self.menu.output, image)
+
+            # Render detections
+            if self.show_landmarks:
+                self.draw_landmarks(image, landmarks)
+
+        if self.menu.state == "finished":
+            self.counter = self.menu.get_selected_option()
+
+        return image
+    
+    def run_menu(self) -> Counter:
         """
         Runs the pose detector video capture menu.
 
@@ -61,103 +146,79 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         Returns:
             Counter: The chosen option.
         """
-        menu = ExerciseMenu(options, (self.width, self.height))
-        with mp_pose.Pose(min_detection_confidence=self.min_detection_confidence, min_tracking_confidence=self.min_tracking_confidence) as pose:
-            while self.cap.isOpened():
-                _, image = self.cap.read()
+        while self.cap.isOpened():
+            _, frame = self.cap.read()
 
-                # Flip image horizontally
-                if self.flip:
-                    image = cv2.flip(image, 1)
+            # Process frame
+            frame = self.process_menu_frame(frame)
+            
+            # check if counter is chosen
+            if self.menu.state == "finished":
+                return self.counter
 
-                # Recolor feed
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                image.flags.writeable = False
+            # Show to screen
+            cv2.imshow(window_name, frame)
+            if cv2.waitKey(10) & 0xFF == ord('q'):
+                break
 
-                # Make detection
-                results = pose.process(image)
 
-                # Recolor image back to BGR
-                image.flags.writeable = True
-                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
-                # Extract landmarks
-                with contextlib.suppress(Exception):
-                    landmarks = results.pose_landmarks
-
-                    # Run menu
-                    menu.run(landmarks.landmark)
-
-                    # Render menu
-                    if menu.state == "start":
-                        image = self.draw_menu_images(menu.get_options_images_and_positions(), image)
-                    else:
-                        self.draw_numeric_menu(menu.get_numeric_options_positions(), image)
-
-                    # Render output
-                    self.draw_output_on_image(menu.output, image)
-
-                    # Render detections
-                    if self.show_landmarks:
-                        self.draw_landmarks(image, landmarks)
-
-                # Show to screen
-                cv2.imshow(window_name, image)
-                if cv2.waitKey(10) & 0xFF == ord('q'):
-                    break
-
-                if menu.state == "finished":
-                    return menu.get_selected_option()
-
-        
-    def run_counter(self, pose_counter: Counter) -> None:
+    def process_counter_frame(self, image: np.ndarray) -> np.ndarray:
         """
-        Runs the pose detector video capture.
+        Processes a frame from the video capture.
 
         Args:
-            pose_counter (Counter): The pose counter to use.
+            image (np.ndarray): The image to process.
+
+        Returns:
+            Union[Counter, np.ndarray]: The chosen counter or the processed image.
         """
-        with mp_pose.Pose(min_detection_confidence=self.min_detection_confidence, min_tracking_confidence=self.min_tracking_confidence) as pose:
-            start_pose_image = cv2.imread(start_pose_image_path, cv2.IMREAD_UNCHANGED)
-            while self.cap.isOpened() and pose_counter.state != "finished":
-                _, image = self.cap.read()
+        image, results = self.process_result_frame(image)
 
-                # Flip image horizontally
-                if self.flip:
-                    image = cv2.flip(image, 1)
+        # Extract landmarks
+        with contextlib.suppress(Exception):
+            landmarks = results.pose_landmarks
 
-                # Recolor feed
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                image.flags.writeable = False
+            # Run pose counter
+            self.counter.run(landmarks.landmark)
 
-                # Make detection
-                results = pose.process(image)
+            # Render start pose
+            if self.counter.state == "start":
+                image = self.draw_start_pose(self.start_pose_image, image, opacity=0.5)
+            else:
+                self.draw_stats_background(image)
+            
+            # Render output
+            self.draw_output_on_image(self.counter.output, image)
 
-                # Recolor image back to BGR
-                image.flags.writeable = True
-                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            # Render detections
+            if self.show_landmarks:
+                self.draw_landmarks(image, landmarks)
 
-                # Extract landmarks
-                with contextlib.suppress(Exception):
-                    landmarks = results.pose_landmarks
-                    
-                    # Run pose counter
-                    pose_counter.run(landmarks.landmark)
+        return image
 
-                    # Render start pose
-                    if pose_counter.state == "start":
-                        image = self.draw_start_pose(start_pose_image, image, opacity=0.5)
-                    else:
-                        self.draw_stats_background(image)
-                    
-                    # Render output
-                    self.draw_output_on_image(pose_counter.output, image)
 
-                    # Render detections
-                    if self.show_landmarks:
-                        self.draw_landmarks(image, landmarks)
+    def load_counter(self, counter: Counter) -> None:
+        """
+        Loads the counter to use.
 
-                # Show to screen
-                cv2.imshow(window_name, image)
-                if cv2.waitKey(10) & 0xFF == ord('q'):
-                    break
+        Args:
+            counter (Counter): The counter to use.
+        """
+        self.counter = counter
+
+
+    def run_counter(self) -> None:
+        """
+        Runs the pose detector video capture.
+        """
+        while self.cap.isOpened() and self.counter.state != "finished":
+            _, frame = self.cap.read()
+
+            # Process frame
+            frame = self.process_counter_frame(frame)
+
+            # Show to screen
+            cv2.imshow(window_name, frame)
+            if cv2.waitKey(10) & 0xFF == ord('q'):
+                self.exit = True
+                break
