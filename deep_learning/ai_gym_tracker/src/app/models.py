@@ -151,11 +151,16 @@ class ExerciseMenu:
         self.selected_option = None
         self.selected_reps = None
         self.selected_sets = None
+        self.last_selected_num_option = {
+            "selected_reps": None,
+            "selected_sets": None,
+        }
         self.right_hand_position = None
         self.left_hand_position = None
         self.start_time = None
         self.landmarks = None
         self.state = "start"
+        self.state_changed = False
         self.output = {}
         self.exercise_options = [
             {
@@ -204,7 +209,7 @@ class ExerciseMenu:
 
     def calculate_position_for_number(self, number: int, start: int, end: int) -> tuple:
         """
-        Calculate screen position for a number option, arranged in a circular manner.
+        Calculate screen position for a number option.
 
         Args:
             number (int): The number for which to calculate the position.
@@ -214,27 +219,12 @@ class ExerciseMenu:
         Returns:
             tuple: Position (x, y) on the screen.
         """
+        index = number - start
         total_numbers = end - start + 1
-        angle_step = 360 / total_numbers  # Angle step in degrees
-
-        # Calculate the angle for this particular number
-        angle = angle_step * (number - start)
-
-        # Convert angle to radians for math calculations
-        angle_rad = math.radians(angle)
-
-        # Circle's center
-        circle_center_x = self.width // 2
-        y_offset = self.height // 20
-        circle_center_y = self.height // 2 + y_offset
-
-        # Circle's radius (1/4 of the screen height)
-        radius = (self.height // 3.5)
-
-        # Calculate position based on angle and radius
-        x = int(circle_center_x + radius * math.cos(angle_rad))
-        y = int(circle_center_y + radius * math.sin(angle_rad))
-
+        section_width = self.width / total_numbers
+        x_offset = section_width / 2 - self.width // 30
+        x = int((index * section_width) + x_offset)
+        y = int(self.height / 2)
         return (x, y)
     
     def get_options_images_and_positions(self) -> List[Dict[str, Any]]:
@@ -255,7 +245,7 @@ class ExerciseMenu:
         """
         return self.numeric_options
     
-    def generate_feedback(self, message: str = "Hold hand over an option to select") -> Dict[str, str]:
+    def generate_feedback(self, message: str = "Hold palm over an option to select") -> Dict[str, str]:
         """
         Generate feedback for the user.
         """
@@ -291,6 +281,18 @@ class ExerciseMenu:
         else:
             self.check_selection(self.exercise_options, "selecting_reps", "Exercise")
 
+    def get_state_changed(self) -> bool:
+        """
+        Check if the state has changed.
+
+        Returns:
+            bool: True if the state has changed, False otherwise.
+        """
+        if self.state_changed:
+            self.state_changed = False
+            return True
+        return False
+
     def check_selection(self, options: List[Dict[str, Any]], next_state: str, selection_type: str) -> None:
         """
         Check if hands are over a specific option and handle the selection process.
@@ -301,10 +303,10 @@ class ExerciseMenu:
             selection_type (str): Type of selection (Exercise, Reps, Sets).
         """
         hand_over_any_option = False
+        current_time = time.time()
         for option in options:
             if self.is_hand_over_option(option):
                 hand_over_any_option = True
-                current_time = time.time()
                 if self.start_time is None:
                     self.start_time = current_time
                 elif current_time - self.start_time >= 3:
@@ -317,11 +319,15 @@ class ExerciseMenu:
                     self.state = next_state
                     self.start_time = None
                     self.output = self.generate_feedback()
+                    self.state_changed = True
+                elif self.state in ["selecting_reps", "selecting_sets"]:
+                    if self.last_selected_num_option["selected_reps"] != option['index'] and self.last_selected_num_option["selected_sets"] != option['index']:
+                        self.start_time = current_time
+                    self.output = self.generate_feedback(f"Selecting {option['index']} {selection_type} in {3 - int(current_time - self.start_time)} secs")
                 else:
-                    if self.state in ["selecting_reps", "selecting_sets"]:
-                        self.output = self.generate_feedback(f"Selecting {option['index']} {selection_type} in {3 - int(current_time - self.start_time)} secs")
-                    else:
-                        self.output = self.generate_feedback(f"Selecting {option['title']} in {3 - int(current_time - self.start_time)} secs")
+                    self.output = self.generate_feedback(f"Selecting {option['title']} in {3 - int(current_time - self.start_time)} secs")
+                self.last_selected_num_option["selected_reps"] = option['index'] if selection_type == "Reps per set" else None
+                self.last_selected_num_option["selected_sets"] = option['index'] if selection_type == "Sets" else None
                 break
 
         if not hand_over_any_option:
@@ -350,7 +356,7 @@ class ExerciseMenu:
             centroid_position = (position[0] + (image.shape[0] // 2),
                                 position[1] + (image.shape[1] // 2))
             
-            # Create a circle area around the centroid with a radius of threshold * image width / 2
+            # Create a circle area around the centroid
             radius = threshold * image.shape[0] / 2
         else:
             # No image, get text size and calculate centroid position
