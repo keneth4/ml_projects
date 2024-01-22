@@ -3,7 +3,7 @@ import time
 import math
 import cv2
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Tuple
 from src.app import mp_pose
 from src.utils import numeric_menu_config
 
@@ -42,12 +42,10 @@ class Counter(ABC):
     """
     def __init__(
         self,
-        title: str = "",
-        image_path: str = "",
-        state: str = "start",
-        output: Dict[str, str] = None,
-        reps_per_set: Optional[int] = None,
-        num_sets: Optional[int] = None
+        title: str,
+        image_path: str,
+        reps_per_set: Optional[int],
+        num_sets: Optional[int]
     ) -> None:
         """
         Args:
@@ -56,17 +54,34 @@ class Counter(ABC):
             reps_per_set (Optional[int]): The number of reps per set.
             num_sets (Optional[int]): The number of sets.
         """
-        self.counter = 0
+        self.counter: int
+        self.state: str
+        self.output: Dict[str, str]
+        self.current_set: int
+        self.reps_this_set: int
+        self.landmarks: List[mp_pose.PoseLandmark]
+
         self.title = title
         self.image_path = image_path
         self.reps_per_set = reps_per_set
         self.num_sets = num_sets
+        self.reset_base()
+
+    def reset_base(self):
+        """Resets the counter to its initial state."""
+        self.counter = 0
+        self.state = "start"
+        self.output = {}
         self.current_set = 1
         self.reps_this_set = 0
+        self.landmarks = []
 
-        self.landmarks: List[mp_pose.PoseLandmark] = []
-        self.state = state
-        self.output = output or {}
+    @abstractmethod
+    def reset(self):
+        """
+        Resets the counter to its initial state.
+        """
+        ...
 
     @abstractmethod
     def make_calculations(self):
@@ -82,13 +97,6 @@ class Counter(ABC):
         """
         ...
 
-    @abstractmethod
-    def reset(self):
-        """
-        Resets the counter to its initial state.
-        """
-        ...
-
     def run(self, landmarks: List[mp_pose.PoseLandmark]) -> int:
         """
         Args:
@@ -98,13 +106,6 @@ class Counter(ABC):
         self.make_calculations()
         self.count()
         return self.counter
-    
-    def is_finished(self) -> bool:
-        """
-        Returns:
-            bool: True if the counter is finished, False otherwise.
-        """
-        return self.current_set > self.num_sets
 
     def increment(self):
         """Increments the counter by 1."""
@@ -113,15 +114,6 @@ class Counter(ABC):
     def decrement(self):
         """Decrements the counter by 1."""
         self.counter -= 1
-
-    def reset_base(self):
-        """Resets counters to 0."""
-        self.counter = 0
-        self.state = "start"
-        self.reps_per_set = None
-        self.num_sets = None
-        self.current_set = 1
-        self.reps_this_set = 0
 
     def get_total_reps(self) -> int:
         """
@@ -142,6 +134,13 @@ class Counter(ABC):
 
     def __repr__(self):
         return str(self.output) if self.output else self.get_info()
+    
+    def is_finished(self) -> bool:
+        """
+        Returns:
+            bool: True if the counter is finished, False otherwise.
+        """
+        return self.current_set > self.num_sets
 
 
 class ExerciseMenu:
@@ -149,12 +148,12 @@ class ExerciseMenu:
     Class for an interactive exercise menu using hand landmarks.
     """
 
-    def __init__(self, options: List[Counter], screen_size: tuple = (1280, 720)) -> None:
+    def __init__(self, options: List[Counter], screen_size: Tuple = (1280, 720)) -> None:
         """
         Initialize the ExerciseMenu class.
 
         Args:
-            options (Dict[str, tuple]): A dictionary mapping exercise names to screen positions (x, y).
+            options (Dict[str, Tuple]): A dictionary mapping exercise names to screen positions (x, y).
         """
         self.options = options
         self.width, self.height = screen_size
@@ -162,8 +161,8 @@ class ExerciseMenu:
         self.selected_reps: Optional[int]
         self.selected_sets: Optional[int]
         self.last_selected_num_option: Dict[str, Optional[int]]
-        self.right_hand_position: Optional[tuple]
-        self.left_hand_position: Optional[tuple]
+        self.right_hand_position: Optional[Tuple]
+        self.left_hand_position: Optional[Tuple]
         self.start_time: Optional[float]
         self.landmarks: Optional[List[mp_pose.PoseLandmark]]
         self.tentative_option: Optional[int]
@@ -171,6 +170,7 @@ class ExerciseMenu:
         self.state_changed: bool
         self.tentative_option_changed: bool
         self.output: Dict[str, str]
+
         self.load_attrs()
 
     def load_attrs(self) -> None:
@@ -244,7 +244,7 @@ class ExerciseMenu:
             # Update the position in the option dictionary
             option["position"] = (image_x, image_y)
 
-    def calculate_position_for_number(self, number: int, start: int, end: int) -> tuple:
+    def calculate_position_for_number(self, number: int, start: int, end: int) -> Tuple:
         """
         Calculate screen position for a number option.
 
@@ -254,7 +254,7 @@ class ExerciseMenu:
             end (int): Ending number of the range.
 
         Returns:
-            tuple: Position (x, y) on the screen.
+            Tuple: Position (x, y) on the screen.
         """
         index = number - start
         total_numbers = end - start + 1
@@ -370,8 +370,8 @@ class ExerciseMenu:
                         self.selected_option = option['index']
                     self.state = next_state
                     self.start_time = None
-                    self.output = self.generate_feedback()
                     self.state_changed = True
+                    self.output = self.generate_feedback()
                 elif self.state in ["selecting_reps", "selecting_sets"]:
                     if self.last_selected_num_option["selected_reps"] != option['index'] and self.last_selected_num_option["selected_sets"] != option['index']:
                         self.start_time = current_time
