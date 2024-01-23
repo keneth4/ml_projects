@@ -56,11 +56,7 @@ To run AI Gym Tracker, follow these steps:
 ```
     pip install -r requirements.txt
 ```
-5. Navigate to the root folder of the project in your command line or terminal.
-```
-    cd ai-gym-tracker
-```
-6. Run the application using the command:
+5. Run the application using the command:
 ```
     python -m src.app.main
 ```
