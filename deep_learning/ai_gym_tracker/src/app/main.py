@@ -27,9 +27,6 @@ def main() -> None:
             # Run video capture
             video_capture.run_counter()
 
-            # Print total reps
-            print(f"Total {chosen_counter.title} reps: {chosen_counter.get_total_reps()}")
-
             # Reset counter and menu
             chosen_counter.reset()
             video_capture.menu.reset()

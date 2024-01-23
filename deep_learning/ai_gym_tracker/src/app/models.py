@@ -1,9 +1,8 @@
 """Base model class for all counters in the application."""
 import time
-import math
-import cv2
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any, Tuple
+import cv2
 from src.app import mp_pose
 from src.utils import numeric_menu_config
 
@@ -66,7 +65,7 @@ class Counter(ABC):
         self.reps_this_set: int
         self.landmarks: List[mp_pose.PoseLandmark]
         self.start_time: Optional[float]
-        self.current_time: Optional[float]
+        self.finish_time: Optional[float]
 
         self.reset_base()
 
@@ -81,7 +80,7 @@ class Counter(ABC):
         self.reps_this_set = 0
         self.landmarks = []
         self.start_time = None
-        self.current_time = None
+        self.finish_time = None
 
     @abstractmethod
     def reset(self):
@@ -121,6 +120,29 @@ class Counter(ABC):
     def decrement(self):
         """Decrements the counter by 1."""
         self.counter -= 1
+
+    def set_start_time(self) -> None:
+        """
+        Sets the start time of the counter.
+        """
+        self.start_time = time.time()
+
+    def get_total_time(self) -> float:
+        """
+        Returns:
+            float: The total time elapsed in seconds since the start of the counter.
+        """
+        return round(time.time() - self.start_time, 2)
+    
+    def get_formatted_total_time(self) -> str:
+        """
+        Returns:
+            str: The total time elapsed in minutes and seconds since the start of the counter.
+        """
+        total_seconds = self.get_total_time()
+        minutes = int(total_seconds // 60)
+        seconds = int(total_seconds % 60)
+        return f"{minutes}m {seconds}s"
 
     def get_total_reps(self) -> int:
         """
@@ -367,7 +389,8 @@ class ExerciseMenu:
                 if self.tentative_option != option['index']:
                     self.tentative_option = option['index']
                     self.tentative_option_changed = True
-                if self.start_time is None:
+                    self.start_time = None
+                elif self.start_time is None:
                     self.start_time = current_time
                 elif current_time - self.start_time >= 3:
                     if self.state == "selecting_reps":
@@ -378,6 +401,7 @@ class ExerciseMenu:
                         self.selected_option = option['index']
                     self.state = next_state
                     self.start_time = None
+                    self.tentative_option = None
                     self.state_changed = True
                     self.output = self.generate_feedback()
                 elif self.state in ["selecting_reps", "selecting_sets"]:
@@ -392,6 +416,7 @@ class ExerciseMenu:
 
         if not hand_over_any_option:
             self.start_time = None
+            self.tentative_option = None
             if self.state in ["selecting_reps", "selecting_sets"]:
                 self.output = self.generate_feedback(f"Select number of {selection_type}")
             else:

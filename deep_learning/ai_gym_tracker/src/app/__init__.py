@@ -27,7 +27,6 @@ stats_background_color = (
     stats_bar_config['background_color']['r'],
     stats_bar_config['background_color']['g'],
     stats_bar_config['background_color']['b'])
-stats_position_top = stats_bar_config['position_top']
 
 # Load counters config
 pose_estimation_config = config['pose_estimation']

@@ -28,11 +28,9 @@ interface:
     position_top: true
   start_pose_image_path: src/assets/human-body-pose-3d.png
   sound:
-    # start: src/assets/sounds/start.wav
-    # stop: src/assets/sounds/stop.wav
-    # error: src/assets/sounds/error.wav
     select: src/assets/sounds/select.wav
     success: src/assets/sounds/success.wav
+    accomplished: src/assets/sounds/accomplished.wav
   text_configs:
     counter:
       font: FONT_HERSHEY_DUPLEX
@@ -55,7 +53,9 @@ interface:
     numeric_menu:
       font: FONT_HERSHEY_SIMPLEX
       font_scale: 2
+    stats:
+      font: FONT_HERSHEY_SIMPLEX
+      font_scale: 2
 
 logging:
   level: INFO
-

@@ -1,4 +1,5 @@
 """This module contains classes for counting exercises."""
+import time
 import numpy as np
 from typing import Dict
 from src.utils.utils import CounterUtils
@@ -64,7 +65,8 @@ class CurlCounter(Counter, CounterUtils):
             "counter": [self.left_counter, self.right_counter],
             "sets": f"Set {self.current_set}/{self.num_sets}",
             "reps_per_set": self.reps_per_set,
-            "message": message
+            "message": message,
+            "timer": self.get_formatted_total_time()
         }
 
     def set_starting_pose(self, message: str = "Please stand in the starting position") -> None:
@@ -212,7 +214,8 @@ class SquatCounter(Counter, CounterUtils):
             "title": self.title,
             "counter": f"{self.reps_this_set}/{self.reps_per_set}",
             "sets": f"Set {self.current_set}/{self.num_sets}",
-            "message": message
+            "message": message,
+            "timer": self.get_formatted_total_time()
         }
 
     def set_starting_pose(self, message: str = "Please stand in the starting position") -> None:

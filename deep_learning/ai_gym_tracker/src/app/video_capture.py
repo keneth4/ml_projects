@@ -1,6 +1,7 @@
 """Video capture class."""
+import time
 import contextlib
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import numpy as np
 import cv2
 
@@ -41,29 +42,28 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         self.cap = cv2.VideoCapture(device)
         self.width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.flip = flip
-        self.show_landmarks = show_landmarks
-        self.min_detection_confidence = min_detection_confidence
-        self.min_tracking_confidence = min_tracking_confidence
+        self.flip: bool = flip
+        self.show_landmarks: bool = show_landmarks
         self.options: List[Counter] = []
         self.menu: ExerciseMenu = None
-        self.pose = mp_pose.Pose(min_detection_confidence=self.min_detection_confidence, min_tracking_confidence=self.min_tracking_confidence)
+        self.pose: mp_pose.Pose = mp_pose.Pose(min_detection_confidence=min_detection_confidence, min_tracking_confidence=min_tracking_confidence)
         self.counter: Counter = None
         self.start_pose_image: np.ndarray = cv2.imread(start_pose_image_path, cv2.IMREAD_UNCHANGED)
-        self.exit = False
+        self.title_banner: np.ndarray = self.create_rounded_banner(self.width, int(self.height // 4.5))
+        self.message_banner: np.ndarray = self.create_rounded_banner(self.width, int(self.height // 4.5))
+        self.stats_banner: np.ndarray = self.create_rounded_banner(int(self.width // 2), int(self.height // 2))
+        self.exit: bool = False
+        self.stats: Dict[str, str] = None
 
-        print(f"VideoCapture: {self.width}x{self.height}")
-
+        print(f"AiGymTracker: {self.width}x{self.height}")
 
     def __enter__(self):
         self.pose.__enter__()
         return self
 
-
     def __exit__(self, exc_type, exc_value, traceback):
         self.cap.release()
         cv2.destroyAllWindows()
-
 
     def load_options(self, options: List[Counter]) -> None:
         """
@@ -73,9 +73,10 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
             options (List[Counter]): The options to choose from.
         """
         self.options = options
-        print(f"Loaded {[option.title for option in self.options]}")
+        print("Loaded exercise options:")
+        for option in self.options:
+            print(f"> {option.title}")
         self.menu = ExerciseMenu(options, (self.width, self.height))
-
 
     def process_result_frame(self, image: np.ndarray) -> Tuple[np.ndarray, mp_pose.PoseLandmark]:
         """
@@ -103,7 +104,6 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         return (image, results)
-    
 
     def process_menu_frame(self, image: np.ndarray) -> np.ndarray:
         """
@@ -131,6 +131,9 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
                 self.draw_numeric_menu(self.menu.get_numeric_options_positions(), image)
 
             # Render output
+            self.draw_title_background_banner(image, self.title_banner)
+            if self.menu.output.get("message"):
+                self.draw_message_background_banner(image, self.message_banner)
             self.draw_output_on_image(self.menu.output, image)
 
             # Render detections
@@ -147,7 +150,7 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
             self.counter = self.menu.get_selected_option()
 
         return image
-    
+
     def run_menu(self) -> Counter:
         """
         Runs the pose detector video capture menu.
@@ -173,6 +176,32 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
             if cv2.waitKey(10) & 0xFF == ord('q'):
                 break
 
+    def render_counter_stats(self, image: np.ndarray) -> None:
+        """
+        Renders the stats of the counter.
+        """
+
+        self.draw_stats(self.stats, image, self.stats_banner)
+
+    def generate_stats(self):
+        """
+        Generate the stats message.
+        """
+        self.stats = {
+            "title" : self.counter.title,
+            "total_reps" : f"Total Reps: {self.counter.get_total_reps()}",
+            "total_time" : f"Time: {self.counter.get_formatted_total_time()}",
+        }
+
+    def load_counter(self, counter: Counter) -> None:
+        """
+        Loads the counter to use for the video capture session and sets the start time of the counter.
+
+        Args:
+            counter (Counter): The counter to use.
+        """
+        self.counter = counter
+        self.counter.set_start_time()
 
     def process_counter_frame(self, image: np.ndarray) -> np.ndarray:
         """
@@ -182,55 +211,68 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
             image (np.ndarray): The image to process.
 
         Returns:
-            Union[Counter, np.ndarray]: The chosen counter or the processed image.
+            np.ndarray: The processed image.
         """
+        # Base processing for every frame
         image, results = self.process_result_frame(image)
 
-        # Extract landmarks
+        # If the state is 'finished', render stats and return the image
+        if self.counter.state == "finished":
+            self.render_counter_stats(image)
+            return image
+
+        # Extract landmarks and other processing for states other than 'finished'
         with contextlib.suppress(Exception):
             landmarks = results.pose_landmarks
 
-            # Run pose counter
+            # Run pose counter and other processing logic
             self.counter.run(landmarks.landmark)
 
             # Render start pose
             if self.counter.state == "start":
                 image = self.draw_start_pose(self.start_pose_image, image, opacity=0.5)
             else:
-                self.draw_stats_background(image)
+                self.draw_title_background_banner(image, self.title_banner)
             
             # Render output
+            if self.counter.output.get("message"):
+                self.draw_message_background_banner(image, self.message_banner)
             self.draw_output_on_image(self.counter.output, image)
 
-            # Render detections
+            # Render detections if required
             if self.show_landmarks:
                 self.draw_landmarks(image, landmarks)
 
         return image
 
-
-    def load_counter(self, counter: Counter) -> None:
-        """
-        Loads the counter to use.
-
-        Args:
-            counter (Counter): The counter to use.
-        """
-        self.counter = counter
-
-
     def run_counter(self) -> None:
         """
         Runs the pose detector video capture.
         """
-        while self.cap.isOpened() and self.counter.state != "finished":
+        finished_display_time = 10  # Time in seconds to display stats when finished
+        start_finished_time = None  # Track when the state first changes to finished
+        stats_message_generated = False  # Flag to check if stats message is generated
+
+        while self.cap.isOpened():
             _, frame = self.cap.read()
 
-            # Process frame
+            # Check if the counter state has just changed to 'finished'
+            if self.counter.state == "finished" and not stats_message_generated:
+                self.play_sound(sound_config['accomplished'])
+                self.generate_stats()
+                stats_message_generated = True
+                start_finished_time = time.time()
+
+            # Process frame (this will include rendering the stats message if generated)
             frame = self.process_counter_frame(frame)
 
             # Show to screen
             cv2.imshow(window_name, frame)
+
             if cv2.waitKey(10) & 0xFF == ord('q'):
                 self.exit = True
+                break
+
+            # Exit after displaying stats for the required time
+            if stats_message_generated and (time.time() - start_finished_time >= finished_display_time):
                 break

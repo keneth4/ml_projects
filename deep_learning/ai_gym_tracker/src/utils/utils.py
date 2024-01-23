@@ -4,10 +4,18 @@ import numpy as np
 import simpleaudio as sa
 import cv2
 
-from src.app import mp_pose, mp_drawing, stats_background_color, stats_position_top
-from src.utils import counter_config, double_counter_config, message_config, title_config, sets_config, timer_config, numeric_menu_config
+from src.app import mp_pose, mp_drawing, stats_background_color
+from src.utils import (
+    counter_config,
+    double_counter_config,
+    message_config,
+    title_config,
+    sets_config,
+    numeric_menu_config,
+    timer_config,
+    stats_config)
 
-# Create counters utils class
+
 class CounterUtils:
     """
     Class with utility functions for counting reps and sets in a workout.
@@ -55,20 +63,6 @@ class VideoCaptureUtils:
     """
     Class with utility functions for capturing video.
     """
-    def draw_landmarks(self, image: np.ndarray, landmarks: List[Dict]) -> None:
-        """
-        Draws the landmarks on an image.
-
-        Args:
-            image (np.ndarray): Image to draw on.
-            landmarks (List[Dict]): List of landmarks.
-        """
-        mp_drawing.draw_landmarks(image, landmarks, mp_pose.POSE_CONNECTIONS,
-                                mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=2),
-                                mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2),
-        )
-
-
     def get_bottom_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
         Calculates the position of the text on the screen.
@@ -85,7 +79,6 @@ class VideoCaptureUtils:
         """
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         return ((img_size[0]) - (text_size[0] // 2) - 75, (img_size[1] // 2) + (text_size[1] // 2))
-
 
     def get_top_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
@@ -104,7 +97,6 @@ class VideoCaptureUtils:
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         return ((img_size[0]) - (text_size[0] // 2) - 75, text_size[1] + 40)
 
-
     def get_top_right_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
         Calculates the position of the text on the screen.
@@ -122,7 +114,6 @@ class VideoCaptureUtils:
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         return (img_size[1] - text_size[0] - 50, text_size[1] + 50)
 
-
     def get_top_left_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
         Calculates the position of the text on the screen.
@@ -139,32 +130,30 @@ class VideoCaptureUtils:
         """
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         x_offset = img_size[0] // 25
-        return (x_offset, text_size[1] * 2)
+        y_offset = img_size[1] // 45
+        return (x_offset, text_size[1] + y_offset)
 
-
-    def draw_text_with_border(self, image: np.ndarray, text: str, position: Tuple[int, int], font: int, font_scale: int, thickness: int, color: Tuple[int, int, int], border_thickness: int) -> None:
+    def get_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
-        Draws text with a border on an image.
+        Calculates the position of the text on the screen.
 
         Args:
-            image (np.ndarray): The image to draw on.
-            text (str): The text to draw.
-            position (Tuple[int, int]): The position to draw the text.
-            font (int): The font type.
-            font_scale (int): The scale of the font.
-            thickness (int): The thickness of the font.
-            color (Tuple[int, int, int]): The color of the text.
-            border_thickness (int): The thickness of the border.
+            text (str): Text to draw on the image.
+            font (int): Font to use.
+            font_scale (float): Font scale to use.
+            font_thickness (int): Font thickness to use.
+            img_size (Tuple[int, int]): Size of the image.
+
+        Returns:
+            Tuple[int, int]: Position of the text on the screen.
         """
-        # Draw black border by offsetting text
-        for x_offset in [-1, 1]:
-            for y_offset in [-1, 1]:
-                border_position = (position[0] + x_offset, position[1] + y_offset)
-                cv2.putText(image, text, border_position, font, font_scale, (0, 0, 0), border_thickness, cv2.LINE_AA)
-
-        # Draw the main text
-        cv2.putText(image, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
-
+        # Get the width and height of the text
+        text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
+        
+        # Calculate the position of the text on the screen, centered horizontally and vertically
+        x = (img_size[1] // 2) - (text_size[0] // 2)  # Center horizontally
+        y = (img_size[0] // 2) + (text_size[1] // 2)  # Center vertically with baseline adjustment
+        return (x, y)
 
     def configure_text_settings(self, text_type: str, img_size: Tuple[int, int], text: Union[str, List[str]]) -> Tuple:
         """
@@ -211,57 +200,50 @@ class VideoCaptureUtils:
             font_scale = sets_config["font_scale"]
             thickness = font_scale * 2
             position = self.get_top_left_screen_text_position(text, font, font_scale, thickness, img_size)
+        elif text_type == "timer":
+            font = getattr(cv2, timer_config["font"])
+            font_scale = timer_config["font_scale"]
+            thickness = font_scale * 2
+            position = self.get_top_left_screen_text_position(text, font, font_scale, thickness, img_size)
+            y_offset = img_size[1] // 20
+            position = (position[0], position[1] + y_offset)
+        elif text_type == "stats":
+            font = getattr(cv2, stats_config["font"])
+            font_scale = stats_config["font_scale"]
+            thickness = font_scale * 2
+            position = self.get_center_screen_text_position(text, font, font_scale, thickness, img_size)
 
         border_thickness = thickness + 2
         return font, font_scale, thickness, position, border_thickness
 
-
-    def draw_stats_background(self, image: np.ndarray) -> None:
+    def draw_landmarks(self, image: np.ndarray, landmarks: List[Dict]) -> None:
         """
-        Draws the background for the stats bar.
+        Draws the landmarks on an image.
 
         Args:
             image (np.ndarray): Image to draw on.
+            landmarks (List[Dict]): List of landmarks.
         """
-        text_height = cv2.getTextSize("0", getattr(cv2, counter_config["font"]), counter_config["font_scale"], counter_config["font_scale"] * 2)[0][1]
-        if stats_position_top:
-            cv2.rectangle(image, (0, 0), (image.shape[1], text_height + 100), stats_background_color, -1)
-        else:
-            cv2.rectangle(image, (0, image.shape[0] - text_height - 100), (image.shape[1], image.shape[0]), stats_background_color, -1)
-
-
-    def draw_output_on_image(self, output: Dict[str, str], image: np.ndarray) -> None:
-        """
-        Draws the output on an image.
-
-        Args:
-            output (Dict[str, str]): Output to draw.
-            image (np.ndarray): Image to draw on.
-        """
-        for text_type in ['sets', 'title', 'counter', 'message']:#, 'timer']:
-            if text := output.get(text_type, ""):
-                if isinstance(text, list):
-                    text = [f"L {text[0]}/{output.get('reps_per_set', '')}", f"R {text[1]}/{output.get('reps_per_set', '')}"]
-                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings('double_counter', image.shape, text)
-                    self.draw_text_with_border(image, text[0], position[0], font, font_scale, thickness, (255, 255, 255), border_thickness)
-                    self.draw_text_with_border(image, text[1], position[1], font, font_scale, thickness, (255, 255, 255), border_thickness)
-                else:
-                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings(text_type, image.shape, text)
-                    self.draw_text_with_border(image, text, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
-
+        mp_drawing.draw_landmarks(image, landmarks, mp_pose.POSE_CONNECTIONS,
+                                mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=2),
+                                mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2),
+        )
 
     def draw_start_pose(self, start_pose_image: np.ndarray, image: np.ndarray, opacity: float) -> np.ndarray:
         """
         Draws the start pose on an image with a given opacity.
 
         Args:
-            pose_img_path (str): Path to the start pose image.
+            start_pose_image (np.ndarray): The start pose image with an alpha channel.
             image (np.ndarray): Image to draw on.
+            opacity (float): Opacity of the start pose image.
         """
         # Check if the image has an alpha channel
         if start_pose_image.shape[2] == 4:
-            # Extract the alpha channel as a mask
-            alpha_channel = start_pose_image[:,:,3]
+            # Extract the alpha channel as a mask and apply opacity
+            alpha_channel = (start_pose_image[:,:,3] / 255.0) * opacity
+        else:
+            raise ValueError("Start pose image does not have an alpha channel.")
 
         # Convert to BGR
         start_pose_image = cv2.cvtColor(start_pose_image, cv2.COLOR_BGRA2BGR)
@@ -273,29 +255,21 @@ class VideoCaptureUtils:
         new_height = image.shape[0]
         new_width = int(start_pose_image.shape[1] * ratio)
 
-        # Resize the image, preserving the aspect ratio
+        # Resize the image and the alpha channel, preserving the aspect ratio
         start_pose_image = cv2.resize(start_pose_image, (new_width, new_height))
-
-        # Resize the alpha channel to match the resized image
         alpha_channel_resized = cv2.resize(alpha_channel, (new_width, new_height))
 
-        # Since the resized image might not match the background size, we need to center it
-        # Create a new image with the same size as the background and fill it with gray color
-        silhouette = np.ones_like(image) * 127
-
-        # Calculate top-left corner position to center the silhouette on the background
+        # Calculate top-left corner position to center the image on the background
         x_offset = (image.shape[1] - new_width) // 2
         y_offset = (image.shape[0] - new_height) // 2
 
-        # Create mask for the area we want to blend on the background based on the new size of the start pose image
-        mask = alpha_channel_resized > 0
+        # Blend the start pose image with the background image
+        for c in range(0, 3):
+            image[y_offset:y_offset+new_height, x_offset:x_offset+new_width, c] = \
+                alpha_channel_resized * start_pose_image[:, :, c] + \
+                (1 - alpha_channel_resized) * image[y_offset:y_offset+new_height, x_offset:x_offset+new_width, c]
 
-        # Place the resized start pose image onto the silhouette image at the calculated offset
-        silhouette[y_offset:y_offset+new_height, x_offset:x_offset+new_width][mask] = start_pose_image[mask]
-
-        # Now blend the silhouette with the background image
-        return cv2.addWeighted(silhouette, opacity, image, 1 - opacity, 0)
-
+        return image
 
     def draw_menu_images(self, options: List, image: np.ndarray) -> np.ndarray:
         """
@@ -329,7 +303,6 @@ class VideoCaptureUtils:
 
         return image
 
-
     def draw_numeric_menu(self, options: List, image: np.ndarray) -> None:
         """
         Draws the numeric menu on a given frame.
@@ -352,6 +325,163 @@ class VideoCaptureUtils:
 
             self.draw_text_with_border(image, text, position, font, font_scale, thickness, color, border_thickness)
 
+    def draw_text_with_border(self, image: np.ndarray, text: str, position: Tuple[int, int], font: int, font_scale: int, thickness: int, color: Tuple[int, int, int], border_thickness: int) -> None:
+        """
+        Draws text with a border on an image.
+
+        Args:
+            image (np.ndarray): The image to draw on.
+            text (str): The text to draw.
+            position (Tuple[int, int]): The position to draw the text.
+            font (int): The font type.
+            font_scale (int): The scale of the font.
+            thickness (int): The thickness of the font.
+            color (Tuple[int, int, int]): The color of the text.
+            border_thickness (int): The thickness of the border.
+        """
+        # Draw black border by offsetting text
+        for x_offset in [-1, 1]:
+            for y_offset in [-1, 1]:
+                border_position = (position[0] + x_offset, position[1] + y_offset)
+                cv2.putText(image, text, border_position, font, font_scale, (0, 0, 0), border_thickness, cv2.LINE_AA)
+
+        # Draw the main text
+        cv2.putText(image, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
+
+    def draw_output_on_image(self, output: Dict[str, str], image: np.ndarray) -> None:
+        """
+        Draws the output on an image.
+
+        Args:
+            output (Dict[str, str]): Output to draw.
+            image (np.ndarray): Image to draw on.
+        """
+        for text_type in ['title', 'counter', 'sets', 'message', 'timer']:
+            if text := output.get(text_type, ""):
+                if isinstance(text, str):
+                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings(text_type, image.shape, text)
+                    self.draw_text_with_border(image, text, position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+                elif isinstance(text, list):
+                    text = [f"L {text[0]}/{output.get('reps_per_set', '')}", f"R {text[1]}/{output.get('reps_per_set', '')}"]
+                    font, font_scale, thickness, position, border_thickness = self.configure_text_settings('double_counter', image.shape, text)
+                    self.draw_text_with_border(image, text[0], position[0], font, font_scale, thickness, (255, 255, 255), border_thickness)
+                    self.draw_text_with_border(image, text[1], position[1], font, font_scale, thickness, (255, 255, 255), border_thickness)
+
+    def draw_title_background_banner(self, image: np.ndarray, title_banner: np.ndarray, transparency=0.5) -> None:
+        """
+        Draws the banner for the title and counters.
+        """
+        # Extract the alpha channel as a mask and adjust with transparency factor
+        alpha_channel = (title_banner[:, :, 3] / 255.0) * transparency  # Normalize and apply transparency
+
+        # Convert title_banner to BGR (discard alpha channel)
+        title_banner_bgr = cv2.cvtColor(title_banner, cv2.COLOR_BGRA2BGR)
+
+        # Assuming the banner will be placed at the top of the image
+        y1, y2 = 0, title_banner.shape[0]
+        x1, x2 = 0, title_banner.shape[1]
+
+        # Extract the region of interest (ROI) from the original image
+        roi = image[y1:y2, x1:x2]
+
+        # Blend the banner and the ROI based on the alpha mask
+        for c in range(0, 3):
+            roi[:, :, c] = roi[:, :, c] * (1 - alpha_channel) + title_banner_bgr[:, :, c] * alpha_channel
+
+        # Place the blended ROI back into the original image
+        image[y1:y2, x1:x2] = roi
+
+    def draw_message_background_banner(self, image: np.ndarray, message_banner: np.ndarray, transparency=0.5) -> None:
+        """
+        Draws the banner for the message.
+        """
+        # Extract the alpha channel as a mask and adjust with transparency factor
+        alpha_channel = (message_banner[:, :, 3] / 255.0) * transparency
+
+        # Convert message_banner to BGR (discard alpha channel)
+        message_banner_bgr = cv2.cvtColor(message_banner, cv2.COLOR_BGRA2BGR)
+
+        # Assuming the banner will be placed at the bottom of the image
+        y1, y2 = image.shape[0] - message_banner.shape[0], image.shape[0]
+        x1, x2 = 0, message_banner.shape[1]
+
+        # Extract the region of interest (ROI) from the original image
+        roi = image[y1:y2, x1:x2]
+
+        # Blend the banner and the ROI based on the alpha mask
+        for c in range(0, 3):
+            roi[:, :, c] = roi[:, :, c] * (1 - alpha_channel) + message_banner_bgr[:, :, c] * alpha_channel
+
+        # Place the blended ROI back into the original image
+        image[y1:y2, x1:x2] = roi
+
+    def draw_stats(self, stats: Dict[str, str], image: np.ndarray, stats_banner: np.ndarray, transparency=0.5) -> None:
+        """
+        Draws the stats background banner on the center of the image then draws the stats on the banner.
+
+        Args:
+            stats (Dict[str, str]): Stats to draw. Contains title, total_reps, and total_time.
+            image (np.ndarray): Image to draw on.
+        """
+        # Extract the alpha channel as a mask and adjust with transparency factor
+        alpha_channel = (stats_banner[:, :, 3] / 255.0) * transparency
+
+        # Convert stats_banner to BGR (discard alpha channel)
+        stats_banner_bgr = cv2.cvtColor(stats_banner, cv2.COLOR_BGRA2BGR)
+
+        # Assuming the banner will be placed at the center of the image
+        y1, y2 = image.shape[0] // 2 - stats_banner.shape[0] // 2, image.shape[0] // 2 + stats_banner.shape[0] // 2
+        x1, x2 = image.shape[1] // 2 - stats_banner.shape[1] // 2, image.shape[1] // 2 + stats_banner.shape[1] // 2
+
+        # Extract the region of interest (ROI) from the original image
+        roi = image[y1:y2, x1:x2]
+
+        # Blend the banner and the ROI based on the alpha mask
+        for c in range(0, 3):
+            roi[:, :, c] = roi[:, :, c] * (1 - alpha_channel) + stats_banner_bgr[:, :, c] * alpha_channel
+
+        # Place the blended ROI back into the original image
+        image[y1:y2, x1:x2] = roi
+        
+        # Draw stats title, total reps, and total time on separate lines on the banner
+        font, font_scale, thickness, position, border_thickness = self.configure_text_settings('stats', image.shape, stats['title'])
+        y_offset_new_line = cv2.getTextSize("0", font, font_scale, thickness)[0][1] + 30
+        position = (position[0], position[1] - int(y_offset_new_line * 1.5))
+        self.draw_text_with_border(image, stats['title'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+
+        font, font_scale, thickness, position, border_thickness = self.configure_text_settings('stats', image.shape, stats['total_reps'])
+        position = (position[0], position[1] + int(y_offset_new_line * 0.4))
+        self.draw_text_with_border(image, stats['total_reps'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+
+        font, font_scale, thickness, position, border_thickness = self.configure_text_settings('stats', image.shape, stats['total_time'])
+        position = (position[0], position[1] + int(y_offset_new_line * 1.4))
+        self.draw_text_with_border(image, stats['total_time'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+
+    @staticmethod
+    def create_rounded_banner(width: int, height: int, corner_radius=50) -> np.ndarray:
+        """
+        Creates a rounded banner.
+        """
+        # Background color
+        background_color = stats_background_color
+
+        # Create an empty image with an alpha channel (RGBA)
+        banner = np.zeros((height, width, 4), dtype=np.uint8)
+
+        # Draw the rectangle and circles in BGR color
+        color = (*background_color, 255)  # Full opacity for the color part
+
+        # Drawing filled circles at corners for rounded effect
+        cv2.circle(banner, (corner_radius, corner_radius), corner_radius, color, -1)
+        cv2.circle(banner, (width - corner_radius, corner_radius), corner_radius, color, -1)
+        cv2.circle(banner, (corner_radius, height - corner_radius), corner_radius, color, -1)
+        cv2.circle(banner, (width - corner_radius, height - corner_radius), corner_radius, color, -1)
+
+        # Drawing filled rectangles to fill the rest of the banner
+        cv2.rectangle(banner, (corner_radius, 0), (width - corner_radius, height), color, -1)
+        cv2.rectangle(banner, (0, corner_radius), (width, height - corner_radius), color, -1)
+
+        return banner
 
     @staticmethod
     def play_sound(file_path):
