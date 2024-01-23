@@ -1,7 +1,8 @@
 """Video capture class."""
 import time
+import traceback
 import contextlib
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 import numpy as np
 import cv2
 
@@ -54,6 +55,8 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         self.stats_banner: np.ndarray = self.create_rounded_banner(int(self.width // 2), int(self.height // 2))
         self.exit: bool = False
         self.stats: Dict[str, str] = None
+        self.numeric_options: Dict[str, Any] = {}
+        self.images_and_positions: Dict[str, Any] = {}
 
         print(f"AiGymTracker: {self.width}x{self.height}")
 
@@ -77,6 +80,8 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         for option in self.options:
             print(f"> {option.title}")
         self.menu = ExerciseMenu(options, (self.width, self.height))
+        self.numeric_options = self.menu.get_numeric_options_positions()
+        self.images_and_positions = self.menu.get_options_images_and_positions()
 
     def process_result_frame(self, image: np.ndarray) -> Tuple[np.ndarray, mp_pose.PoseLandmark]:
         """
@@ -126,9 +131,14 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
 
             # Render menu
             if self.menu.state == "start":
-                image = self.draw_menu_images(self.menu.get_options_images_and_positions(), image)
+                image = self.draw_menu_images(self.images_and_positions, image, self.menu.output.get("tentative_option_index"))
             else:
-                self.draw_numeric_menu(self.menu.get_numeric_options_positions(), image)
+                try:
+                    image = self.draw_numeric_menu(self.numeric_options, image, self.menu.output.get("tentative_option_index"))
+                except Exception as e:
+                    print(e)
+                    traceback.print_exc()
+                    print("Error drawing numeric menu")
 
             # Render output
             self.draw_title_background_banner(image, self.title_banner)

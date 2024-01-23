@@ -3,8 +3,9 @@ import time
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any, Tuple
 import cv2
-from src.app import mp_pose
+from src.app import mp_pose, text_selected_foreground_image_path
 from src.utils import numeric_menu_config
+from src.utils.utils import VideoCaptureUtils
 
 # Create a Counter base class
 class Counter(ABC):
@@ -212,19 +213,35 @@ class ExerciseMenu:
             {
                 "index" : i,
                 "image" : cv2.imread(option.image_path, cv2.IMREAD_UNCHANGED),
+                "image_selected": VideoCaptureUtils.draw_selected_halo_from_alpha_channel(
+                    image = cv2.imread(option.image_path, cv2.IMREAD_UNCHANGED),
+                    halo_color = (
+                        numeric_menu_config["halo_color"]["b"],
+                        numeric_menu_config["halo_color"]["g"],
+                        numeric_menu_config["halo_color"]["r"]),
+                    halo_thickness = numeric_menu_config["halo_thickness"]
+                ),
                 "title" : option.title
             } for i, option in enumerate(self.options.copy())
         ]
-        self.calculate_images_positions()
-        numeric_options_range = [1, 10]
+        self.calculate_positions(self.exercise_options, "exercise")
+        numeric_options_range = 10
         self.numeric_options = [
             {
                 "index": i,
-                "text": str(i),
-                "position": self.calculate_position_for_number(i, numeric_options_range[0], numeric_options_range[1]),
+                "text": str(i + 1),
+                "text_selected_foreground": VideoCaptureUtils.draw_selected_halo_from_alpha_channel(
+                    image = cv2.imread(text_selected_foreground_image_path, cv2.IMREAD_UNCHANGED),
+                    halo_color = (
+                        numeric_menu_config["halo_color"]["b"],
+                        numeric_menu_config["halo_color"]["g"],
+                        numeric_menu_config["halo_color"]["r"]),
+                    halo_thickness = numeric_menu_config["halo_thickness"]
+                ),
             }
-            for i in range(numeric_options_range[0], numeric_options_range[1] + 1)
+            for i in range(numeric_options_range)
         ]
+        self.calculate_positions(self.numeric_options, "numeric")
 
     def reset(self) -> None:
         """
@@ -247,34 +264,22 @@ class ExerciseMenu:
         self.tentative_option_changed = False
         self.output = {}
 
-    def calculate_images_positions(self) -> None:
+    def calculate_images_positions(self, image_index: int, section_width: int, image_width: int) -> Tuple:
         """
-        Calculate the positions for each exercise image on the screen.
+        Calculate screen position for an image option.
         """
-        num_options = len(self.exercise_options)
-        section_width = self.width / num_options
+        # Calculate the center x position of the section
+        center_x = (image_index * section_width) + (section_width / 2)
+        # Calculate the center y position of the screen
+        center_y = self.height / 2
 
-        # Set fixed size for exercise images based on section width
-        image_width = section_width * 0.5
+        # Adjust for the size of the image
+        image_x = center_x - (image_width / 2)
+        image_y = center_y - (image_width / 2)
 
-        # Scale the image height based on the fixed width
-        for option in self.exercise_options:
-            option["image"] = cv2.resize(option["image"], (int(image_width), int(image_width)))
+        return (image_x, image_y)
 
-        for i, option in enumerate(self.exercise_options):
-            # Calculate the center x position of the section
-            center_x = (i * section_width) + (section_width / 2)
-            # Calculate the center y position of the screen
-            center_y = self.height / 2
-
-            # Adjust for the size of the image
-            image_x = center_x - (image_width / 2)
-            image_y = center_y - (image_width / 2)
-
-            # Update the position in the option dictionary
-            option["position"] = (image_x, image_y)
-
-    def calculate_position_for_number(self, number: int, start: int, end: int) -> Tuple:
+    def calculate_position_for_number(self, index: int, section_width: int) -> Tuple:
         """
         Calculate screen position for a number option.
 
@@ -286,13 +291,52 @@ class ExerciseMenu:
         Returns:
             Tuple: Position (x, y) on the screen.
         """
-        index = number - start
-        total_numbers = end - start + 1
-        section_width = self.width / total_numbers
         x_offset = section_width / 2 - self.width // 30
         x = int((index * section_width) + x_offset)
         y = int(self.height / 2)
         return (x, y)
+    
+    def calculate_positions(self, options: List[Dict], option_type: str) -> None:
+        """
+        Calculate the positions for each option on the screen.
+
+        Args:
+            options (list): A list of dictionaries containing the options (either exercise or numeric).
+            option_type (str): The type of options ('exercise' or 'numeric').
+        """
+        num_options = len(options)
+        section_width = self.width / num_options
+
+        for i, option in enumerate(options):
+            # Calculate the width of the image based on the number of options
+            section_width = self.width / num_options
+            image_width = section_width * 0.5
+
+            if option_type == 'exercise':
+                option["image"] = cv2.resize(option["image"], (int(image_width), int(image_width)))
+                option["image_selected"] = cv2.resize(option["image_selected"], (int(image_width), int(image_width)))
+                (image_x, image_y) = self.calculate_images_positions(i, section_width, image_width)
+
+            elif option_type == 'numeric':
+                # Set fixed size for text based on section width and font size
+                (text_x, text_y) = self.calculate_position_for_number(i, section_width)
+
+                # Set fixed size for text foreground based on section width and font size
+                option["text_selected_foreground"] = cv2.resize(option["text_selected_foreground"], (int(section_width), int(section_width)))
+                x_offset = 0.3
+                y_offset = 0.7
+                text_selected_foreground_x = text_x - int(section_width * x_offset)
+                text_selected_foreground_y = text_y - int(section_width * y_offset)
+
+            else:
+                raise ValueError("Unknown option type")
+
+            # Update the position in the option dictionary
+            if option_type == 'exercise':
+                option["position"] = (image_x, image_y)
+            elif option_type == 'numeric':
+                option["position"] = (text_x, text_y)
+                option["text_selected_foreground_position"] = (text_selected_foreground_x, text_selected_foreground_y)
 
     def get_options_images_and_positions(self) -> List[Dict[str, Any]]:
         """
@@ -319,6 +363,7 @@ class ExerciseMenu:
         return {
             "title": "AI Gym Tracker",
             "message": message,
+            "tentative_option_index": self.tentative_option,
         }
 
     def update_hands_position(self) -> None:
@@ -372,6 +417,26 @@ class ExerciseMenu:
             return True
         return False
 
+    def transition_state(self, option: Dict[str, Any], next_state: str) -> None:
+        """
+        Transition to the next state.
+
+        Args:
+            option (Dict[str, Any]): The selected option.
+            next_state (str): The next state to transition to.
+        """
+        if self.state == "selecting_reps":
+            self.selected_reps = int(option['index']) + 1
+        elif self.state == "selecting_sets":
+            self.selected_sets = int(option['index']) + 1
+        else:
+            self.selected_option = option['index']
+        self.state = next_state
+        self.start_time = None
+        self.tentative_option = None
+        self.state_changed = True
+        self.output = self.generate_feedback()
+
     def check_selection(self, options: List[Dict[str, Any]], next_state: str, selection_type: str) -> None:
         """
         Check if hands are over a specific option and handle the selection process.
@@ -386,28 +451,18 @@ class ExerciseMenu:
         for option in options:
             if self.is_hand_over_option(option):
                 hand_over_any_option = True
-                if self.tentative_option != option['index']:
+                if self.tentative_option is None or self.tentative_option != option['index']:
                     self.tentative_option = option['index']
                     self.tentative_option_changed = True
                     self.start_time = None
-                elif self.start_time is None:
+                if self.start_time is None:
                     self.start_time = current_time
                 elif current_time - self.start_time >= 3:
-                    if self.state == "selecting_reps":
-                        self.selected_reps = option['index']
-                    elif self.state == "selecting_sets":
-                        self.selected_sets = option['index']
-                    else:
-                        self.selected_option = option['index']
-                    self.state = next_state
-                    self.start_time = None
-                    self.tentative_option = None
-                    self.state_changed = True
-                    self.output = self.generate_feedback()
+                    self.transition_state(option, next_state)
                 elif self.state in ["selecting_reps", "selecting_sets"]:
                     if self.last_selected_num_option["selected_reps"] != option['index'] and self.last_selected_num_option["selected_sets"] != option['index']:
                         self.start_time = current_time
-                    self.output = self.generate_feedback(f"Selecting {option['index']} {selection_type} in {3 - int(current_time - self.start_time)} secs")
+                    self.output = self.generate_feedback(f"Selecting {selection_type} in {3 - int(current_time - self.start_time)} secs")
                 else:
                     self.output = self.generate_feedback(f"Selecting {option['title']} in {3 - int(current_time - self.start_time)} secs")
                 self.last_selected_num_option["selected_reps"] = option['index'] if selection_type == "Reps per set" else None

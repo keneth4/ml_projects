@@ -17,6 +17,7 @@ min_tracking_confidence = pose_config['min_tracking_confidence']
 interface_config = config['interface']
 window_name = interface_config['window_name']
 start_pose_image_path = interface_config['start_pose_image_path']
+text_selected_foreground_image_path = interface_config['text_selected_foreground_image_path']
 
 # Load sound config
 sound_config = interface_config['sound']

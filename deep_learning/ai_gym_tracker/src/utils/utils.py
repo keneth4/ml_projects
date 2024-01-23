@@ -271,45 +271,100 @@ class VideoCaptureUtils:
 
         return image
 
-    def draw_menu_images(self, options: List, image: np.ndarray) -> np.ndarray:
+    def draw_menu_images(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
         """
         Draws the menu images on a given frame.
 
         Args:
             options (list): A list of dictionaries containing the menu options.
             image (np.ndarray): The frame (image) to draw the menu images on.
+            selected_option (int): The index of the selected option.
 
         Returns:
             np.ndarray: The updated frame with menu images drawn.
         """
-        for option in options:
-            menu_image = option['image']
+        for i, option in enumerate(options):
+            if selected_option is not None and i == selected_option:
+                menu_image = option['image_selected']
+            else:
+                menu_image = option['image']
+
             position = option['position']
+            x, y = int(position[0]), int(position[1])
 
-            # Check if the image has an alpha channel
             if menu_image.shape[2] == 4:
-                # Extract the alpha channel as a mask
-                alpha_channel = menu_image[:, :, 3]
+                # Extract the alpha channel as a mask and normalize it to [0, 1]
+                alpha_channel = menu_image[:, :, 3] / 255.0
+                alpha_channel_resized = cv2.resize(alpha_channel, (menu_image.shape[1], menu_image.shape[0]), interpolation=cv2.INTER_AREA)
+
                 # Convert to BGR
-                menu_image = cv2.cvtColor(menu_image, cv2.COLOR_BGRA2BGR)
-                # Resize the alpha channel to match the menu image size
-                alpha_channel_resized = cv2.resize(alpha_channel, (menu_image.shape[1], menu_image.shape[0]))
+                menu_image_bgr = cv2.cvtColor(menu_image, cv2.COLOR_BGRA2BGR)
 
-                # Create mask for the area where we want to blend the menu image
-                mask = alpha_channel_resized > 0
+                # Resize the image to match the frame size at the position
+                h, w = menu_image_bgr.shape[:2]
+                image_section = image[y:y+h, x:x+w]
 
-                # Place the menu image onto the frame at the calculated position
-                image[int(position[1]):int(position[1]) + menu_image.shape[0], int(position[0]):int(position[0]) + menu_image.shape[1]][mask] = menu_image[mask]
+                # Perform alpha blending
+                for c in range(3):
+                    image_section[:, :, c] = (alpha_channel_resized * menu_image_bgr[:, :, c] +
+                                            (1 - alpha_channel_resized) * image_section[:, :, c])
+
+                # Place the blended section back onto the image
+                image[y:y+h, x:x+w] = image_section
 
         return image
+    
+    # def draw_numeric_menu(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
+    #     """
+    #     Draws the numeric menu on a given frame.
 
-    def draw_numeric_menu(self, options: List, image: np.ndarray) -> None:
+    #     Args:
+    #         options (list): A list of dictionaries containing the menu options.
+    #         image (np.ndarray): The frame (image) to draw the numeric menu on.
+    #         selected_option (int): The index of the selected option.
+
+    #     Returns:
+    #         np.ndarray: The updated frame with numeric menu drawn.
+    #     """
+    #     for option in options:
+    #         i = option['index'] - 1
+    #         text = option['text']
+    #         position = option['position']
+    #         fg_image = option['text_selected_foreground']
+    #         fg_position = option.get('text_selected_foreground_position')
+    #         font = getattr(cv2, numeric_menu_config["font"])
+    #         font_scale = numeric_menu_config["font_scale"]
+    #         thickness = font_scale * 2
+    #         color = (255, 255, 255)  # Default text color
+    #         border_thickness = thickness + 2
+
+    #         # Draw the text
+    #         self.draw_text_with_border(image, text, position, font, font_scale, thickness, color, border_thickness)
+
+    #         # Check if this option is the selected one
+    #         if i == selected_option:
+    #             # Get the position of the foreground image
+    #             fg_x, fg_y = int(fg_position[0]), int(fg_position[1])
+    #             # Get the foreground image size
+    #             h, w = fg_image.shape[:2]
+    #             # Ensure the foreground image is correctly positioned and blended
+    #             image_section = image[fg_y:fg_y+h, fg_x:fg_x+w]
+    #             alpha_channel = fg_image[:, :, 3] / 255.0
+    #             for c in range(3):
+    #                 image_section[:, :, c] = (alpha_channel * fg_image[:, :, c] +
+    #                                         (1 - alpha_channel) * image_section[:, :, c])
+    #             image[fg_y:fg_y+h, fg_x:fg_x+w] = image_section
+
+    #     return image
+
+    def draw_numeric_menu(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
         """
         Draws the numeric menu on a given frame.
 
         Args:
             options (list): A list of dictionaries containing the menu options.
             image (np.ndarray): The frame (image) to draw the numeric menu on.
+            selected_option (int): The index of the selected option.
 
         Returns:
             np.ndarray: The updated frame with numeric menu drawn.
@@ -317,13 +372,36 @@ class VideoCaptureUtils:
         for option in options:
             text = option['text']
             position = option['position']
-            font = getattr(cv2, numeric_menu_config["font"])
-            font_scale = numeric_menu_config["font_scale"]
+            font = getattr(cv2, numeric_menu_config['font'])
+            font_scale = numeric_menu_config['font_scale']
             thickness = font_scale * 2
             color = (255, 255, 255)
             border_thickness = thickness + 2
 
+            # Draw the text
             self.draw_text_with_border(image, text, position, font, font_scale, thickness, color, border_thickness)
+
+            if option['index'] == selected_option:
+                fg_position = option['text_selected_foreground_position']
+                fg_x, fg_y = int(fg_position[0]), int(fg_position[1])
+                fg_image = option['text_selected_foreground']
+                h, w = fg_image.shape[:2]
+
+                # Adjust position and clip the size to fit within the image
+                fg_x = max(0, min(fg_x, image.shape[1] - w))
+                fg_y = max(0, min(fg_y, image.shape[0] - h))
+                h = min(h, image.shape[0] - fg_y)
+                w = min(w, image.shape[1] - fg_x)
+
+                # Ensure the foreground image is correctly positioned and blended
+                image_section = image[fg_y:fg_y+h, fg_x:fg_x+w]
+                alpha_channel = fg_image[:, :, 3] / 255.0
+                for c in range(3):
+                    image_section[:, :, c] = (alpha_channel * fg_image[:, :, c] +
+                                            (1 - alpha_channel) * image_section[:, :, c])
+                image[fg_y:fg_y+h, fg_x:fg_x+w] = image_section
+
+        return image
 
     def draw_text_with_border(self, image: np.ndarray, text: str, position: Tuple[int, int], font: int, font_scale: int, thickness: int, color: Tuple[int, int, int], border_thickness: int) -> None:
         """
@@ -482,6 +560,54 @@ class VideoCaptureUtils:
         cv2.rectangle(banner, (0, corner_radius), (width, height - corner_radius), color, -1)
 
         return banner
+
+    @staticmethod
+    def draw_selected_halo_from_alpha_channel(image: np.ndarray, halo_color: Tuple[int, int, int], halo_thickness: int) -> np.ndarray:
+        """
+        Draws a halo effect on an image using the alpha channel.
+
+        Args:
+            image (np.ndarray): Image to draw on.
+            halo_color (Tuple[int, int, int]): Color of the halo.
+            halo_thickness (int): Thickness of the halo.
+
+        Returns:
+            np.ndarray: The updated image with the halo effect drawn.
+        """
+        if image.shape[2] != 4:
+            raise ValueError("Input image must have an alpha channel.")
+
+        # Extract alpha channel
+        original_alpha = image[:, :, 3].astype(float)
+
+        # Ensure halo_thickness is odd and greater than 0
+        halo_thickness = max(1, halo_thickness)
+        blur_size = halo_thickness * 2
+        blur_size = blur_size + 1 if blur_size % 2 == 0 else blur_size
+
+        # Create a halo mask using the alpha channel
+        halo_mask = cv2.GaussianBlur(original_alpha, (blur_size, blur_size), 0)
+
+        # Create a halo image (RGB only)
+        halo = np.zeros_like(image[:, :, :3])
+        halo[:] = halo_color  # Fill with halo color
+
+        # Ensure the mask is in the range of [0, 1]
+        halo_mask = halo_mask / 255.0
+
+        # Apply the halo mask to the halo image
+        halo = halo.astype(float)
+        for c in range(3):
+            halo[:, :, c] = halo[:, :, c] * halo_mask
+
+        # Combine the halo with the original image
+        image_rgb = image[:, :, :3].astype(float)
+        combined_rgb = np.where(halo_mask[:, :, None] > 0, np.clip(image_rgb + halo, 0, 255), image_rgb)
+
+        # Create a new alpha channel where the halo is added to the original alpha
+        new_alpha = np.clip(original_alpha + (halo_mask * 255), 0, 255).astype(np.uint8)
+
+        return np.dstack((combined_rgb.astype(np.uint8), new_alpha))
 
     @staticmethod
     def play_sound(file_path):

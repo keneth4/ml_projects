@@ -27,6 +27,7 @@ interface:
       b: 0
     position_top: true
   start_pose_image_path: src/assets/human-body-pose-3d.png
+  text_selected_foreground_image_path: src/assets/select-uzumaki-halo.png
   sound:
     select: src/assets/sounds/select.wav
     success: src/assets/sounds/success.wav
@@ -53,6 +54,11 @@ interface:
     numeric_menu:
       font: FONT_HERSHEY_SIMPLEX
       font_scale: 2
+      halo_color:
+        r: 50
+        g: 100
+        b: 150
+      halo_thickness: 100
     stats:
       font: FONT_HERSHEY_SIMPLEX
       font_scale: 2
