@@ -7,6 +7,7 @@ video_capture:
   device: 0
   flip: true
   show_landmarks: false
+  finished_display_time: 7
 
 pose_estimation:
   curl_counter:

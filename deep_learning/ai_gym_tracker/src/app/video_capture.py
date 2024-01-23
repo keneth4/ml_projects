@@ -14,7 +14,8 @@ from src.app import (
     min_tracking_confidence,
     window_name,
     start_pose_image_path,
-    sound_config)
+    sound_config,
+    finished_display_time)
 
 
 # Create a video capture class, generalizing the code above
@@ -186,13 +187,6 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
             if cv2.waitKey(10) & 0xFF == ord('q'):
                 break
 
-    def render_counter_stats(self, image: np.ndarray) -> None:
-        """
-        Renders the stats of the counter.
-        """
-
-        self.draw_stats(self.stats, image, self.stats_banner)
-
     def generate_stats(self):
         """
         Generate the stats message.
@@ -228,7 +222,7 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
 
         # If the state is 'finished', render stats and return the image
         if self.counter.state == "finished":
-            self.render_counter_stats(image)
+            self.draw_stats(self.stats, image, self.stats_banner)
             return image
 
         # Extract landmarks and other processing for states other than 'finished'
@@ -259,7 +253,6 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         """
         Runs the pose detector video capture.
         """
-        finished_display_time = 10  # Time in seconds to display stats when finished
         start_finished_time = None  # Track when the state first changes to finished
         stats_message_generated = False  # Flag to check if stats message is generated
 

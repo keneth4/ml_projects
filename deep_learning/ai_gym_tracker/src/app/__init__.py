@@ -7,6 +7,7 @@ video_capture_config = config['video_capture']
 device = video_capture_config['device']
 flip = video_capture_config['flip']
 show_landmarks = video_capture_config['show_landmarks']
+finished_display_time = video_capture_config['finished_display_time']
 
 # Load MediaPipe Pose config
 pose_config = config['mediapipe']['pose']
