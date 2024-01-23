@@ -313,49 +313,6 @@ class VideoCaptureUtils:
                 image[y:y+h, x:x+w] = image_section
 
         return image
-    
-    # def draw_numeric_menu(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
-    #     """
-    #     Draws the numeric menu on a given frame.
-
-    #     Args:
-    #         options (list): A list of dictionaries containing the menu options.
-    #         image (np.ndarray): The frame (image) to draw the numeric menu on.
-    #         selected_option (int): The index of the selected option.
-
-    #     Returns:
-    #         np.ndarray: The updated frame with numeric menu drawn.
-    #     """
-    #     for option in options:
-    #         i = option['index'] - 1
-    #         text = option['text']
-    #         position = option['position']
-    #         fg_image = option['text_selected_foreground']
-    #         fg_position = option.get('text_selected_foreground_position')
-    #         font = getattr(cv2, numeric_menu_config["font"])
-    #         font_scale = numeric_menu_config["font_scale"]
-    #         thickness = font_scale * 2
-    #         color = (255, 255, 255)  # Default text color
-    #         border_thickness = thickness + 2
-
-    #         # Draw the text
-    #         self.draw_text_with_border(image, text, position, font, font_scale, thickness, color, border_thickness)
-
-    #         # Check if this option is the selected one
-    #         if i == selected_option:
-    #             # Get the position of the foreground image
-    #             fg_x, fg_y = int(fg_position[0]), int(fg_position[1])
-    #             # Get the foreground image size
-    #             h, w = fg_image.shape[:2]
-    #             # Ensure the foreground image is correctly positioned and blended
-    #             image_section = image[fg_y:fg_y+h, fg_x:fg_x+w]
-    #             alpha_channel = fg_image[:, :, 3] / 255.0
-    #             for c in range(3):
-    #                 image_section[:, :, c] = (alpha_channel * fg_image[:, :, c] +
-    #                                         (1 - alpha_channel) * image_section[:, :, c])
-    #             image[fg_y:fg_y+h, fg_x:fg_x+w] = image_section
-
-    #     return image
 
     def draw_numeric_menu(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
         """

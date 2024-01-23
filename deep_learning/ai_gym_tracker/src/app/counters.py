@@ -1,5 +1,4 @@
 """This module contains classes for counting exercises."""
-import time
 import numpy as np
 from typing import Dict
 from src.utils.utils import CounterUtils
