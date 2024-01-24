@@ -7,7 +7,8 @@ import numpy as np
 import cv2
 
 from src.utils.utils import VideoCaptureUtils
-from src.app.models import Counter, ExerciseMenu
+from src.app.menus import ExerciseMenu
+from src.app.counters import Counter
 from src.app import (
     mp_pose,
     min_detection_confidence,
