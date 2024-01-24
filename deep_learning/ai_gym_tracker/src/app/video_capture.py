@@ -6,7 +6,13 @@ from typing import List, Tuple, Dict, Any
 import numpy as np
 import cv2
 
-from src.utils.utils import VideoCaptureUtils
+from src.utils.utils import (
+    TextPositionCalculator,
+    TextManager,
+    ImageDrawer,
+    BannerCreator,
+    SpecialEffects)
+
 from src.app.menus import ExerciseMenu
 from src.app.counters import Counter
 from src.app import (
@@ -20,7 +26,7 @@ from src.app import (
 
 
 # Create a video capture class, generalizing the code above
-class PoseDetectorVideoCapture(VideoCaptureUtils):
+class PoseDetectorVideoCapture:
     """
     Class for capturing video from a camera, detecting poses, and displaying the results.
 
@@ -28,14 +34,48 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
     ----------
     cap : cv2.VideoCapture
         The video capture object.
+    width : int
+        The width of the video capture.
+    height : int
+        The height of the video capture.
     flip : bool
-        Whether to flip the video feed horizontally.
+        Whether to flip the video capture horizontally.
     show_landmarks : bool
-        Whether to show the landmarks on the video feed.
-    min_detection_confidence : float
-        Minimum confidence value ([0.0, 1.0]) for pose detection to be considered successful.
-    min_tracking_confidence : float
-        Minimum confidence value ([0.0, 1.0]) for pose tracking to be considered successful.
+        Whether to show the landmarks on the video capture.
+    options : List[Counter]
+        The options to choose from.
+    menu : ExerciseMenu
+        Menu to choose the exercise from.
+    pose : mp_pose.Pose
+        The pose detector.
+    counter : Counter
+        The counter to use.
+    exit : bool
+        Whether to exit the video capture.
+    stats : Dict[str, str]
+        The stats to display.
+    numeric_options : Dict[str, Any]
+        The numeric options to display.
+    images_and_positions : Dict[str, Any]
+        The images and positions to display.
+    position_calculator : TextPositionCalculator
+        The text position on the image calculator.
+    text_manager : TextManager
+        The text manager to display text on the image.
+    image_drawer : ImageDrawer
+        To draw images on the image.
+    banner_creator : BannerCreator
+        To create banners.
+    special_effects : SpecialEffects
+        To play sounds or other special effects.
+    start_pose_image : np.ndarray
+        The start pose image.
+    title_banner : np.ndarray
+        The title banner background image.
+    message_banner : np.ndarray
+        The message banner background image.
+    stats_banner : np.ndarray
+        The stats banner background image.
     """
     def __init__(self, device: int = 0, flip: bool = False, show_landmarks: bool = True) -> None:
         """
@@ -51,14 +91,19 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         self.menu: ExerciseMenu = None
         self.pose: mp_pose.Pose = mp_pose.Pose(min_detection_confidence=min_detection_confidence, min_tracking_confidence=min_tracking_confidence)
         self.counter: Counter = None
-        self.start_pose_image: np.ndarray = cv2.imread(start_pose_image_path, cv2.IMREAD_UNCHANGED)
-        self.title_banner: np.ndarray = self.create_rounded_banner(self.width, int(self.height // 4.5))
-        self.message_banner: np.ndarray = self.create_rounded_banner(self.width, int(self.height // 4.5))
-        self.stats_banner: np.ndarray = self.create_rounded_banner(int(self.width // 2), int(self.height // 2))
         self.exit: bool = False
         self.stats: Dict[str, str] = None
         self.numeric_options: Dict[str, Any] = {}
         self.images_and_positions: Dict[str, Any] = {}
+        self.position_calculator = TextPositionCalculator()
+        self.text_manager = TextManager(self.position_calculator)
+        self.image_drawer = ImageDrawer(self.text_manager)
+        self.banner_creator = BannerCreator()
+        self.special_effects = SpecialEffects()
+        self.start_pose_image: np.ndarray = cv2.imread(start_pose_image_path, cv2.IMREAD_UNCHANGED)
+        self.title_banner: np.ndarray = self.banner_creator.create_rounded_banner(self.width, int(self.height // 4.5))
+        self.message_banner: np.ndarray = self.banner_creator.create_rounded_banner(self.width, int(self.height // 4.5))
+        self.stats_banner: np.ndarray = self.banner_creator.create_rounded_banner(int(self.width // 2), int(self.height // 2))
 
         print(f"AiGymTracker: {self.width}x{self.height}")
 
@@ -66,9 +111,10 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
         self.pose.__enter__()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, _traceback):
         self.cap.release()
         cv2.destroyAllWindows()
+        self.pose.__exit__(exc_type, exc_value, _traceback)
 
     def load_options(self, options: List[Counter]) -> None:
         """
@@ -133,30 +179,25 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
 
             # Render menu
             if self.menu.state == "start":
-                image = self.draw_menu_images(self.images_and_positions, image, self.menu.output.get("tentative_option_index"))
+                image = self.image_drawer.draw_menu_images(self.images_and_positions, image, self.menu.output.get("tentative_option_index"))
             else:
-                try:
-                    image = self.draw_numeric_menu(self.numeric_options, image, self.menu.output.get("tentative_option_index"))
-                except Exception as e:
-                    print(e)
-                    traceback.print_exc()
-                    print("Error drawing numeric menu")
+                image = self.image_drawer.draw_numeric_menu(self.numeric_options, image, self.menu.output.get("tentative_option_index"))
 
             # Render output
-            self.draw_title_background_banner(image, self.title_banner)
+            self.image_drawer.draw_title_background_banner(image, self.title_banner)
             if self.menu.output.get("message"):
-                self.draw_message_background_banner(image, self.message_banner)
-            self.draw_output_on_image(self.menu.output, image)
+                self.image_drawer.draw_message_background_banner(image, self.message_banner)
+            self.text_manager.draw_output_on_image(self.menu.output, image)
 
             # Render detections
             if self.show_landmarks:
-                self.draw_landmarks(image, landmarks)
+                self.image_drawer.draw_landmarks(image, landmarks)
 
             # Play option sound
             if self.menu.get_state_changed():
-                self.play_sound(sound_config['success'])
+                self.special_effects.play_sound(sound_config['success'])
             if self.menu.get_tentative_option_changed():
-                self.play_sound(sound_config['select'])
+                self.special_effects.play_sound(sound_config['select'])
 
         if self.menu.state == "finished":
             self.counter = self.menu.get_selected_option()
@@ -223,7 +264,7 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
 
         # If the state is 'finished', render stats and return the image
         if self.counter.state == "finished":
-            self.draw_stats(self.stats, image, self.stats_banner)
+            self.image_drawer.draw_stats(self.stats, image, self.stats_banner)
             return image
 
         # Extract landmarks and other processing for states other than 'finished'
@@ -235,18 +276,18 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
 
             # Render start pose
             if self.counter.state == "start":
-                image = self.draw_start_pose(self.start_pose_image, image, opacity=0.5)
+                image = self.image_drawer.draw_start_pose(self.start_pose_image, image, opacity=0.5)
             else:
-                self.draw_title_background_banner(image, self.title_banner)
+                self.image_drawer.draw_title_background_banner(image, self.title_banner)
             
             # Render output
             if self.counter.output.get("message"):
-                self.draw_message_background_banner(image, self.message_banner)
-            self.draw_output_on_image(self.counter.output, image)
+                self.image_drawer.draw_message_background_banner(image, self.message_banner)
+            self.text_manager.draw_output_on_image(self.counter.output, image)
 
             # Render detections if required
             if self.show_landmarks:
-                self.draw_landmarks(image, landmarks)
+                self.image_drawer.draw_landmarks(image, landmarks)
 
         return image
 
@@ -262,7 +303,7 @@ class PoseDetectorVideoCapture(VideoCaptureUtils):
 
             # Check if the counter state has just changed to 'finished'
             if self.counter.state == "finished" and not stats_message_generated:
-                self.play_sound(sound_config['accomplished'])
+                self.special_effects.play_sound(sound_config['accomplished'])
                 self.generate_stats()
                 stats_message_generated = True
                 start_finished_time = time.time()

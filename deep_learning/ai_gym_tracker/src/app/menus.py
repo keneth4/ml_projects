@@ -5,7 +5,7 @@ import cv2
 from src.app import mp_pose, text_selected_foreground_image_path
 from src.app.counters import Counter
 from src.utils import numeric_menu_config
-from src.utils.utils import VideoCaptureUtils
+from src.utils.utils import SpecialEffects
 
 
 class ExerciseMenu:
@@ -48,7 +48,7 @@ class ExerciseMenu:
             {
                 "index" : i,
                 "image" : cv2.imread(option.image_path, cv2.IMREAD_UNCHANGED),
-                "image_selected": VideoCaptureUtils.draw_selected_halo_from_alpha_channel(
+                "image_selected": SpecialEffects.draw_selected_halo_from_alpha_channel(
                     image = cv2.imread(option.image_path, cv2.IMREAD_UNCHANGED),
                     halo_color = (
                         numeric_menu_config["halo_color"]["b"],
@@ -65,7 +65,7 @@ class ExerciseMenu:
             {
                 "index": i,
                 "text": str(i + 1),
-                "text_selected_foreground": VideoCaptureUtils.draw_selected_halo_from_alpha_channel(
+                "text_selected_foreground": SpecialEffects.draw_selected_halo_from_alpha_channel(
                     image = cv2.imread(text_selected_foreground_image_path, cv2.IMREAD_UNCHANGED),
                     halo_color = (
                         numeric_menu_config["halo_color"]["b"],

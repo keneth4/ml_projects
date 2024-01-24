@@ -46,7 +46,7 @@ class CounterUtils:
         angle = np.arccos(cosine_angle)
         return np.degrees(angle)
     
-    def check_starting_pose(self, landmarks: List[Dict]) -> bool:
+    def check_starting_pose(self, landmarks: List[mp_pose.PoseLandmark]) -> bool:
         """
         Checks if the starting pose is correct.
 
@@ -59,13 +59,9 @@ class CounterUtils:
         return all(landmark.visibility > 0.9 for landmark in landmarks)
 
 
-class VideoCaptureUtils:
+class TextPositionCalculator:
     """
-    Class with utility functions for capturing video.
-    """
-    def get_bottom_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
-        """
-        Calculates the position of the text on the screen.
+        Calculates the position of a given text on the screen.
 
         Args:
             text (str): Text to draw on the image.
@@ -73,60 +69,32 @@ class VideoCaptureUtils:
             font_scale (float): Font scale to use.
             font_thickness (int): Font thickness to use.
             img_size (Tuple[int, int]): Size of the image.
+    """
 
-        Returns:
-            Tuple[int, int]: Position of the text on the screen.
+    def get_bottom_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
+        """
+        Calculates the position of a given text on the bottom center of the screen.
         """
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         return ((img_size[0]) - (text_size[0] // 2) - 75, (img_size[1] // 2) + (text_size[1] // 2))
 
     def get_top_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
-        Calculates the position of the text on the screen.
-
-        Args:
-            text (str): Text to draw on the image.
-            font (int): Font to use.
-            font_scale (float): Font scale to use.
-            font_thickness (int): Font thickness to use.
-            img_size (Tuple[int, int]): Size of the image.
-
-        Returns:
-            Tuple[int, int]: Position of the text on the screen.
+        Calculates the position of a given text on the top center of the screen.
         """
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         return ((img_size[0]) - (text_size[0] // 2) - 75, text_size[1] + 40)
 
     def get_top_right_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
-        Calculates the position of the text on the screen.
-
-        Args:
-            text (str): Text to draw on the image.
-            font (int): Font to use.
-            font_scale (float): Font scale to use.
-            font_thickness (int): Font thickness to use.
-            img_size (Tuple[int, int]): Size of the image.
-
-        Returns:
-            Tuple[int, int]: Position of the text on the screen.
+        Calculates the position of a given text on the top right of the screen.
         """
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         return (img_size[1] - text_size[0] - 50, text_size[1] + 50)
 
     def get_top_left_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
-        Calculates the position of the text on the screen.
-
-        Args:
-            text (str): Text to draw on the image.
-            font (int): Font to use.
-            font_scale (float): Font scale to use.
-            font_thickness (int): Font thickness to use.
-            img_size (Tuple[int, int]): Size of the image.
-
-        Returns:
-            Tuple[int, int]: Position of the text on the screen.
+        Calculates the position of a given text on the top left of the screen.
         """
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
         x_offset = img_size[0] // 25
@@ -135,49 +103,46 @@ class VideoCaptureUtils:
 
     def get_center_screen_text_position(self, text: str, font: int, font_scale: float, font_thickness: int, img_size: Tuple[int, int]) -> Tuple[int, int]:
         """
-        Calculates the position of the text on the screen.
-
-        Args:
-            text (str): Text to draw on the image.
-            font (int): Font to use.
-            font_scale (float): Font scale to use.
-            font_thickness (int): Font thickness to use.
-            img_size (Tuple[int, int]): Size of the image.
-
-        Returns:
-            Tuple[int, int]: Position of the text on the screen.
+        Calculates the position of a given text on the center of the screen.
         """
-        # Get the width and height of the text
         text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
-        
-        # Calculate the position of the text on the screen, centered horizontally and vertically
-        x = (img_size[1] // 2) - (text_size[0] // 2)  # Center horizontally
-        y = (img_size[0] // 2) + (text_size[1] // 2)  # Center vertically with baseline adjustment
+        x = (img_size[1] // 2) - (text_size[0] // 2)
+        y = (img_size[0] // 2) + (text_size[1] // 2)
         return (x, y)
+
+
+class TextManager:
+    """
+    Class with utility functions for drawing text on the screen.
+    """
+
+    def __init__(self, position_calculator: TextPositionCalculator = None):
+        self.position_calculator = position_calculator
 
     def configure_text_settings(self, text_type: str, img_size: Tuple[int, int], text: Union[str, List[str]]) -> Tuple:
         """
-        Configures text settings based on the type of text (counter or message).
-
+        Configures the settings for drawing text on the screen.
+        
         Args:
-            text_type (str): The type of text ('counter' or 'message').
-            image (np.ndarray): The image to draw on.
-            text (str): The text to draw.
-
+            text_type (str): Type of text to draw.
+            img_size (Tuple[int, int]): Size of the image.
+            text (Union[str, List[str]]): Text to draw on the image.
+            
         Returns:
-            Tuple containing font, font_scale, thickness, position, and border_thickness.
+            Tuple: Tuple containing the font, font scale, thickness, position, and border thickness.
         """
         if text_type == "counter":
             font = getattr(cv2, counter_config["font"])
             font_scale = counter_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_top_right_screen_text_position(text, font, font_scale, thickness, img_size)
+            position = self.position_calculator.get_top_right_screen_text_position(text, font, font_scale, thickness, img_size)
+
         elif text_type == "double_counter":
             font = getattr(cv2, double_counter_config["font"])
             font_scale = double_counter_config["font_scale"]
             thickness = font_scale * 2
-            positionl = self.get_top_right_screen_text_position(text[0], font, font_scale, thickness, img_size)
-            positionr = self.get_top_right_screen_text_position(text[1], font, font_scale, thickness, img_size)
+            positionl = self.position_calculator.get_top_right_screen_text_position(text[0], font, font_scale, thickness, img_size)
+            positionr = self.position_calculator.get_top_right_screen_text_position(text[1], font, font_scale, thickness, img_size)
             text_height = cv2.getTextSize("0", font, font_scale, thickness)[0][1]
             r_y_offset = text_height + text_height // 2
             y_neg_offset = - text_height // 2
@@ -185,211 +150,70 @@ class VideoCaptureUtils:
             positionl = (positionl[0], positionl[1] + y_neg_offset)
             border_thickness = thickness + 2
             return (font, font_scale, thickness, [positionl, positionr], border_thickness)
+
         elif text_type == "message":
             font = getattr(cv2, message_config["font"])
             font_scale = message_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_bottom_center_screen_text_position(text, font, font_scale, thickness, img_size)
+            position = self.position_calculator.get_bottom_center_screen_text_position(text, font, font_scale, thickness, img_size)
+
         elif text_type == "title":
             font = getattr(cv2, title_config["font"])
             font_scale = title_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_top_center_screen_text_position(text, font, font_scale, thickness, img_size)
+            position = self.position_calculator.get_top_center_screen_text_position(text, font, font_scale, thickness, img_size)
+
         elif text_type == "sets":
             font = getattr(cv2, sets_config["font"])
             font_scale = sets_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_top_left_screen_text_position(text, font, font_scale, thickness, img_size)
+            position = self.position_calculator.get_top_left_screen_text_position(text, font, font_scale, thickness, img_size)
+
         elif text_type == "timer":
             font = getattr(cv2, timer_config["font"])
             font_scale = timer_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_top_left_screen_text_position(text, font, font_scale, thickness, img_size)
+            position = self.position_calculator.get_top_left_screen_text_position(text, font, font_scale, thickness, img_size)
             y_offset = img_size[1] // 20
             position = (position[0], position[1] + y_offset)
+
         elif text_type == "stats":
             font = getattr(cv2, stats_config["font"])
             font_scale = stats_config["font_scale"]
             thickness = font_scale * 2
-            position = self.get_center_screen_text_position(text, font, font_scale, thickness, img_size)
+            position = self.position_calculator.get_center_screen_text_position(text, font, font_scale, thickness, img_size)
 
         border_thickness = thickness + 2
         return font, font_scale, thickness, position, border_thickness
 
-    def draw_landmarks(self, image: np.ndarray, landmarks: List[Dict]) -> None:
-        """
-        Draws the landmarks on an image.
-
-        Args:
-            image (np.ndarray): Image to draw on.
-            landmarks (List[Dict]): List of landmarks.
-        """
-        mp_drawing.draw_landmarks(image, landmarks, mp_pose.POSE_CONNECTIONS,
-                                mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=2),
-                                mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2),
-        )
-
-    def draw_start_pose(self, start_pose_image: np.ndarray, image: np.ndarray, opacity: float) -> np.ndarray:
-        """
-        Draws the start pose on an image with a given opacity.
-
-        Args:
-            start_pose_image (np.ndarray): The start pose image with an alpha channel.
-            image (np.ndarray): Image to draw on.
-            opacity (float): Opacity of the start pose image.
-        """
-        # Check if the image has an alpha channel
-        if start_pose_image.shape[2] == 4:
-            # Extract the alpha channel as a mask and apply opacity
-            alpha_channel = (start_pose_image[:,:,3] / 255.0) * opacity
-        else:
-            raise ValueError("Start pose image does not have an alpha channel.")
-
-        # Convert to BGR
-        start_pose_image = cv2.cvtColor(start_pose_image, cv2.COLOR_BGRA2BGR)
-
-        # Calculate the ratio of the new height to the old height
-        ratio = image.shape[0] / start_pose_image.shape[0]
-
-        # Calculate new width and height
-        new_height = image.shape[0]
-        new_width = int(start_pose_image.shape[1] * ratio)
-
-        # Resize the image and the alpha channel, preserving the aspect ratio
-        start_pose_image = cv2.resize(start_pose_image, (new_width, new_height))
-        alpha_channel_resized = cv2.resize(alpha_channel, (new_width, new_height))
-
-        # Calculate top-left corner position to center the image on the background
-        x_offset = (image.shape[1] - new_width) // 2
-        y_offset = (image.shape[0] - new_height) // 2
-
-        # Blend the start pose image with the background image
-        for c in range(0, 3):
-            image[y_offset:y_offset+new_height, x_offset:x_offset+new_width, c] = \
-                alpha_channel_resized * start_pose_image[:, :, c] + \
-                (1 - alpha_channel_resized) * image[y_offset:y_offset+new_height, x_offset:x_offset+new_width, c]
-
-        return image
-
-    def draw_menu_images(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
-        """
-        Draws the menu images on a given frame.
-
-        Args:
-            options (list): A list of dictionaries containing the menu options.
-            image (np.ndarray): The frame (image) to draw the menu images on.
-            selected_option (int): The index of the selected option.
-
-        Returns:
-            np.ndarray: The updated frame with menu images drawn.
-        """
-        for i, option in enumerate(options):
-            if selected_option is not None and i == selected_option:
-                menu_image = option['image_selected']
-            else:
-                menu_image = option['image']
-
-            position = option['position']
-            x, y = int(position[0]), int(position[1])
-
-            if menu_image.shape[2] == 4:
-                # Extract the alpha channel as a mask and normalize it to [0, 1]
-                alpha_channel = menu_image[:, :, 3] / 255.0
-                alpha_channel_resized = cv2.resize(alpha_channel, (menu_image.shape[1], menu_image.shape[0]), interpolation=cv2.INTER_AREA)
-
-                # Convert to BGR
-                menu_image_bgr = cv2.cvtColor(menu_image, cv2.COLOR_BGRA2BGR)
-
-                # Resize the image to match the frame size at the position
-                h, w = menu_image_bgr.shape[:2]
-                image_section = image[y:y+h, x:x+w]
-
-                # Perform alpha blending
-                for c in range(3):
-                    image_section[:, :, c] = (alpha_channel_resized * menu_image_bgr[:, :, c] +
-                                            (1 - alpha_channel_resized) * image_section[:, :, c])
-
-                # Place the blended section back onto the image
-                image[y:y+h, x:x+w] = image_section
-
-        return image
-
-    def draw_numeric_menu(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
-        """
-        Draws the numeric menu on a given frame.
-
-        Args:
-            options (list): A list of dictionaries containing the menu options.
-            image (np.ndarray): The frame (image) to draw the numeric menu on.
-            selected_option (int): The index of the selected option.
-
-        Returns:
-            np.ndarray: The updated frame with numeric menu drawn.
-        """
-        for option in options:
-            text = option['text']
-            position = option['position']
-            font = getattr(cv2, numeric_menu_config['font'])
-            font_scale = numeric_menu_config['font_scale']
-            thickness = font_scale * 2
-            color = (255, 255, 255)
-            border_thickness = thickness + 2
-
-            # Draw the text
-            self.draw_text_with_border(image, text, position, font, font_scale, thickness, color, border_thickness)
-
-            if option['index'] == selected_option:
-                fg_position = option['text_selected_foreground_position']
-                fg_x, fg_y = int(fg_position[0]), int(fg_position[1])
-                fg_image = option['text_selected_foreground']
-                h, w = fg_image.shape[:2]
-
-                # Adjust position and clip the size to fit within the image
-                fg_x = max(0, min(fg_x, image.shape[1] - w))
-                fg_y = max(0, min(fg_y, image.shape[0] - h))
-                h = min(h, image.shape[0] - fg_y)
-                w = min(w, image.shape[1] - fg_x)
-
-                # Ensure the foreground image is correctly positioned and blended
-                image_section = image[fg_y:fg_y+h, fg_x:fg_x+w]
-                alpha_channel = fg_image[:, :, 3] / 255.0
-                for c in range(3):
-                    image_section[:, :, c] = (alpha_channel * fg_image[:, :, c] +
-                                            (1 - alpha_channel) * image_section[:, :, c])
-                image[fg_y:fg_y+h, fg_x:fg_x+w] = image_section
-
-        return image
-
     def draw_text_with_border(self, image: np.ndarray, text: str, position: Tuple[int, int], font: int, font_scale: int, thickness: int, color: Tuple[int, int, int], border_thickness: int) -> None:
         """
-        Draws text with a border on an image.
+        Draws text with a border on the screen.
 
         Args:
-            image (np.ndarray): The image to draw on.
-            text (str): The text to draw.
-            position (Tuple[int, int]): The position to draw the text.
-            font (int): The font type.
-            font_scale (int): The scale of the font.
-            thickness (int): The thickness of the font.
-            color (Tuple[int, int, int]): The color of the text.
-            border_thickness (int): The thickness of the border.
+            image (np.ndarray): Image to draw the text on.
+            text (str): Text to draw on the image.
+            position (Tuple[int, int]): Position of the text on the image.
+            font (int): Font to use.
+            font_scale (float): Font scale to use.
+            thickness (int): Font thickness to use.
+            color (Tuple[int, int, int]): Color of the text.
+            border_thickness (int): Thickness of the border.
         """
-        # Draw black border by offsetting text
         for x_offset in [-1, 1]:
             for y_offset in [-1, 1]:
                 border_position = (position[0] + x_offset, position[1] + y_offset)
                 cv2.putText(image, text, border_position, font, font_scale, (0, 0, 0), border_thickness, cv2.LINE_AA)
 
-        # Draw the main text
         cv2.putText(image, text, position, font, font_scale, color, thickness, cv2.LINE_AA)
 
     def draw_output_on_image(self, output: Dict[str, str], image: np.ndarray) -> None:
         """
-        Draws the output on an image.
+        Draws the output of the counter on the image.
 
         Args:
-            output (Dict[str, str]): Output to draw.
-            image (np.ndarray): Image to draw on.
+            output (Dict[str, str]): Output of the counter.
+            image (np.ndarray): Image to draw the output on.
         """
         for text_type in ['title', 'counter', 'sets', 'message', 'timer']:
             if text := output.get(text_type, ""):
@@ -402,108 +226,241 @@ class VideoCaptureUtils:
                     self.draw_text_with_border(image, text[0], position[0], font, font_scale, thickness, (255, 255, 255), border_thickness)
                     self.draw_text_with_border(image, text[1], position[1], font, font_scale, thickness, (255, 255, 255), border_thickness)
 
+
+class ImageDrawer:
+    """
+    Class with utility functions for drawing images on the screen.
+    """
+    def __init__(self, text_manager: TextManager = None):
+        self.text_manager = text_manager
+
+    def draw_landmarks(self, image: np.ndarray, landmarks: List[Dict]) -> None:
+        """
+        Draws the landmarks on the image.
+
+        Args:
+            image (np.ndarray): Image to draw the landmarks on.
+            landmarks (List[mp_pose.PoseLandmark]): List of landmarks.
+            mp_drawing (mp.solutions.drawing_utils): MediaPipe drawing utils.
+            mp_pose (mp.solutions.pose): MediaPipe pose model.
+        """
+        mp_drawing.draw_landmarks(
+            image, landmarks, mp_pose.POSE_CONNECTIONS,
+            mp_drawing.DrawingSpec(color=(245, 117, 66), thickness=2, circle_radius=2),
+            mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2),
+        )
+
+    def draw_start_pose(self, start_pose_image: np.ndarray, image: np.ndarray, opacity: float) -> np.ndarray:
+        """
+        Draws the start pose image on the image.
+
+        Args:
+            start_pose_image (np.ndarray): Start pose image.
+            image (np.ndarray): Image to draw the start pose image on.
+            opacity (float): Opacity of the start pose image.
+
+        Returns:
+            np.ndarray: Image with the start pose image drawn on it.
+        """
+        if start_pose_image.shape[2] == 4:
+            alpha_channel = (start_pose_image[:, :, 3] / 255.0) * opacity
+        else:
+            raise ValueError("Start pose image does not have an alpha channel.")
+
+        start_pose_image = cv2.cvtColor(start_pose_image, cv2.COLOR_BGRA2BGR)
+        ratio = image.shape[0] / start_pose_image.shape[0]
+        new_height = image.shape[0]
+        new_width = int(start_pose_image.shape[1] * ratio)
+        start_pose_image = cv2.resize(start_pose_image, (new_width, new_height))
+        alpha_channel_resized = cv2.resize(alpha_channel, (new_width, new_height))
+
+        x_offset = (image.shape[1] - new_width) // 2
+        y_offset = (image.shape[0] - new_height) // 2
+
+        for c in range(0, 3):
+            image[y_offset:y_offset+new_height, x_offset:x_offset+new_width, c] = \
+                alpha_channel_resized * start_pose_image[:, :, c] + \
+                (1 - alpha_channel_resized) * image[y_offset:y_offset+new_height, x_offset:x_offset+new_width, c]
+
+        return image
+
+    def draw_menu_images(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
+        """
+        Draws the menu images on the image.
+
+        Args:
+            options (List): List of menu options.
+            image (np.ndarray): Image to draw the menu images on.
+            selected_option (int, optional): Index of the selected option. Defaults to None.
+
+        Returns:
+            np.ndarray: Image with the menu images drawn on it.
+        """
+        for i, option in enumerate(options):
+            menu_image = option['image_selected'] if selected_option is not None and i == selected_option else option['image']
+            position = option['position']
+            x, y = int(position[0]), int(position[1])
+
+            if menu_image.shape[2] == 4:
+                alpha_channel = menu_image[:, :, 3] / 255.0
+                alpha_channel_resized = cv2.resize(alpha_channel, (menu_image.shape[1], menu_image.shape[0]), interpolation=cv2.INTER_AREA)
+                menu_image_bgr = cv2.cvtColor(menu_image, cv2.COLOR_BGRA2BGR)
+                h, w = menu_image_bgr.shape[:2]
+                image_section = image[y:y+h, x:x+w]
+
+                for c in range(3):
+                    image_section[:, :, c] = (alpha_channel_resized * menu_image_bgr[:, :, c] +
+                                              (1 - alpha_channel_resized) * image_section[:, :, c])
+
+                image[y:y+h, x:x+w] = image_section
+
+        return image
+
+    def draw_numeric_menu(self, options: List, image: np.ndarray, selected_option: int = None) -> np.ndarray:
+        """
+        Draws the numeric menu on the image.
+
+        Args:
+            options (List): List of menu options.
+            image (np.ndarray): Image to draw the numeric menu on.
+            selected_option (int, optional): Index of the selected option. Defaults to None.
+
+        Returns:
+            np.ndarray: Image with the numeric menu drawn on it.
+        """
+        for option in options:
+            text = option['text']
+            position = option['position']
+            font = getattr(cv2, numeric_menu_config['font'])
+            font_scale = numeric_menu_config['font_scale']
+            thickness = font_scale * 2
+            color = (255, 255, 255)
+            border_thickness = thickness + 2
+
+            self.text_manager.draw_text_with_border(image, text, position, font, font_scale, thickness, color, border_thickness)
+
+            if option['index'] == selected_option:
+                fg_position = option['text_selected_foreground_position']
+                fg_image = option['text_selected_foreground']
+                self.apply_image_on_top(image, fg_image, fg_position)
+
+        return image
+
+    def apply_image_on_top(self, base_image: np.ndarray, top_image: np.ndarray, position: Tuple[int, int]) -> None:
+        """
+        Applies an image on top of another image.
+
+        Args:
+            base_image (np.ndarray): Base image.
+            top_image (np.ndarray): Image to apply on top of the base image.
+            position (Tuple[int, int]): Position of the top image on the base image.
+        """
+        fg_x, fg_y = int(position[0]), int(position[1])
+        h, w = top_image.shape[:2]
+
+        fg_x = max(0, min(fg_x, base_image.shape[1] - w))
+        fg_y = max(0, min(fg_y, base_image.shape[0] - h))
+        h = min(h, base_image.shape[0] - fg_y)
+        w = min(w, base_image.shape[1] - fg_x)
+
+        image_section = base_image[fg_y:fg_y+h, fg_x:fg_x+w]
+        alpha_channel = top_image[:, :, 3] / 255.0
+        for c in range(3):
+            image_section[:, :, c] = (alpha_channel * top_image[:, :, c] + (1 - alpha_channel) * image_section[:, :, c])
+        base_image[fg_y:fg_y+h, fg_x:fg_x+w] = image_section
+
     def draw_title_background_banner(self, image: np.ndarray, title_banner: np.ndarray, transparency=0.5) -> None:
         """
-        Draws the banner for the title and counters.
+        Draws the title background banner on the image.
+
+        Args:
+            image (np.ndarray): Image to draw the title background banner on.
+            title_banner (np.ndarray): Title background banner.
+            transparency (float, optional): Transparency of the title background banner. Defaults to 0.5.
         """
-        # Extract the alpha channel as a mask and adjust with transparency factor
-        alpha_channel = (title_banner[:, :, 3] / 255.0) * transparency  # Normalize and apply transparency
-
-        # Convert title_banner to BGR (discard alpha channel)
+        alpha_channel = (title_banner[:, :, 3] / 255.0) * transparency
         title_banner_bgr = cv2.cvtColor(title_banner, cv2.COLOR_BGRA2BGR)
-
-        # Assuming the banner will be placed at the top of the image
         y1, y2 = 0, title_banner.shape[0]
         x1, x2 = 0, title_banner.shape[1]
-
-        # Extract the region of interest (ROI) from the original image
         roi = image[y1:y2, x1:x2]
 
-        # Blend the banner and the ROI based on the alpha mask
         for c in range(0, 3):
             roi[:, :, c] = roi[:, :, c] * (1 - alpha_channel) + title_banner_bgr[:, :, c] * alpha_channel
-
-        # Place the blended ROI back into the original image
         image[y1:y2, x1:x2] = roi
 
     def draw_message_background_banner(self, image: np.ndarray, message_banner: np.ndarray, transparency=0.5) -> None:
         """
-        Draws the banner for the message.
+        Draws the message background banner on the image.
+
+        Args:
+            image (np.ndarray): Image to draw the message background banner on.
+            message_banner (np.ndarray): Message background banner.
+            transparency (float, optional): Transparency of the message background banner. Defaults to 0.5.
         """
-        # Extract the alpha channel as a mask and adjust with transparency factor
         alpha_channel = (message_banner[:, :, 3] / 255.0) * transparency
-
-        # Convert message_banner to BGR (discard alpha channel)
         message_banner_bgr = cv2.cvtColor(message_banner, cv2.COLOR_BGRA2BGR)
-
-        # Assuming the banner will be placed at the bottom of the image
         y1, y2 = image.shape[0] - message_banner.shape[0], image.shape[0]
         x1, x2 = 0, message_banner.shape[1]
-
-        # Extract the region of interest (ROI) from the original image
         roi = image[y1:y2, x1:x2]
 
-        # Blend the banner and the ROI based on the alpha mask
         for c in range(0, 3):
             roi[:, :, c] = roi[:, :, c] * (1 - alpha_channel) + message_banner_bgr[:, :, c] * alpha_channel
-
-        # Place the blended ROI back into the original image
         image[y1:y2, x1:x2] = roi
 
     def draw_stats(self, stats: Dict[str, str], image: np.ndarray, stats_banner: np.ndarray, transparency=0.5) -> None:
         """
-        Draws the stats background banner on the center of the image then draws the stats on the banner.
+        Draws the stats banner on the image.
 
         Args:
-            stats (Dict[str, str]): Stats to draw. Contains title, total_reps, and total_time.
-            image (np.ndarray): Image to draw on.
+            stats (Dict[str, str]): Stats to draw on the image.
+            image (np.ndarray): Image to draw the stats banner on.
+            stats_banner (np.ndarray): Stats banner.
+            transparency (float, optional): Transparency of the stats banner. Defaults to 0.5.
         """
-        # Extract the alpha channel as a mask and adjust with transparency factor
         alpha_channel = (stats_banner[:, :, 3] / 255.0) * transparency
-
-        # Convert stats_banner to BGR (discard alpha channel)
         stats_banner_bgr = cv2.cvtColor(stats_banner, cv2.COLOR_BGRA2BGR)
-
-        # Assuming the banner will be placed at the center of the image
         y1, y2 = image.shape[0] // 2 - stats_banner.shape[0] // 2, image.shape[0] // 2 + stats_banner.shape[0] // 2
         x1, x2 = image.shape[1] // 2 - stats_banner.shape[1] // 2, image.shape[1] // 2 + stats_banner.shape[1] // 2
-
-        # Extract the region of interest (ROI) from the original image
         roi = image[y1:y2, x1:x2]
 
-        # Blend the banner and the ROI based on the alpha mask
         for c in range(0, 3):
             roi[:, :, c] = roi[:, :, c] * (1 - alpha_channel) + stats_banner_bgr[:, :, c] * alpha_channel
-
-        # Place the blended ROI back into the original image
         image[y1:y2, x1:x2] = roi
-        
+
         # Draw stats title, total reps, and total time on separate lines on the banner
-        font, font_scale, thickness, position, border_thickness = self.configure_text_settings('stats', image.shape, stats['title'])
+        font, font_scale, thickness, position, border_thickness = self.text_manager.configure_text_settings('stats', image.shape, stats['title'])
         y_offset_new_line = cv2.getTextSize("0", font, font_scale, thickness)[0][1] + 30
         position = (position[0], position[1] - int(y_offset_new_line * 1.5))
-        self.draw_text_with_border(image, stats['title'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+        self.text_manager.draw_text_with_border(image, stats['title'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
 
-        font, font_scale, thickness, position, border_thickness = self.configure_text_settings('stats', image.shape, stats['total_reps'])
+        font, font_scale, thickness, position, border_thickness = self.text_manager.configure_text_settings('stats', image.shape, stats['total_reps'])
         position = (position[0], position[1] + int(y_offset_new_line * 0.4))
-        self.draw_text_with_border(image, stats['total_reps'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+        self.text_manager.draw_text_with_border(image, stats['total_reps'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
 
-        font, font_scale, thickness, position, border_thickness = self.configure_text_settings('stats', image.shape, stats['total_time'])
+        font, font_scale, thickness, position, border_thickness = self.text_manager.configure_text_settings('stats', image.shape, stats['total_time'])
         position = (position[0], position[1] + int(y_offset_new_line * 1.4))
-        self.draw_text_with_border(image, stats['total_time'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
+        self.text_manager.draw_text_with_border(image, stats['total_time'], position, font, font_scale, thickness, (255, 255, 255), border_thickness)
 
+
+class BannerCreator:
+    """
+    Class with utility functions for creating banners.
+    """
     @staticmethod
-    def create_rounded_banner(width: int, height: int, corner_radius=50) -> np.ndarray:
+    def create_rounded_banner(width: int, height: int, corner_radius=50, background_color=stats_background_color) -> np.ndarray:
         """
         Creates a rounded banner.
+
+        Args:
+            width (int): Width of the banner.
+            height (int): Height of the banner.
+            corner_radius (int, optional): Corner radius of the banner. Defaults to 50.
+            background_color (Tuple[int, int, int], optional): Background color of the banner. Defaults to stats_background_color.
+
+        Returns:
+            np.ndarray: Rounded banner.
         """
-        # Background color
-        background_color = stats_background_color
-
-        # Create an empty image with an alpha channel (RGBA)
         banner = np.zeros((height, width, 4), dtype=np.uint8)
-
-        # Draw the rectangle and circles in BGR color
         color = (*background_color, 255)  # Full opacity for the color part
 
         # Drawing filled circles at corners for rounded effect
@@ -518,61 +475,53 @@ class VideoCaptureUtils:
 
         return banner
 
+
+class SpecialEffects:
+    """
+    Class with utility functions for applying special effects to images.
+    """
     @staticmethod
     def draw_selected_halo_from_alpha_channel(image: np.ndarray, halo_color: Tuple[int, int, int], halo_thickness: int) -> np.ndarray:
         """
-        Draws a halo effect on an image using the alpha channel.
+        Draws a halo around the selected image.
 
         Args:
-            image (np.ndarray): Image to draw on.
+            image (np.ndarray): Image to draw the halo around.
             halo_color (Tuple[int, int, int]): Color of the halo.
             halo_thickness (int): Thickness of the halo.
 
         Returns:
-            np.ndarray: The updated image with the halo effect drawn.
+            np.ndarray: Image with the halo drawn around it.
         """
         if image.shape[2] != 4:
             raise ValueError("Input image must have an alpha channel.")
 
-        # Extract alpha channel
         original_alpha = image[:, :, 3].astype(float)
-
-        # Ensure halo_thickness is odd and greater than 0
         halo_thickness = max(1, halo_thickness)
         blur_size = halo_thickness * 2
         blur_size = blur_size + 1 if blur_size % 2 == 0 else blur_size
 
-        # Create a halo mask using the alpha channel
         halo_mask = cv2.GaussianBlur(original_alpha, (blur_size, blur_size), 0)
-
-        # Create a halo image (RGB only)
         halo = np.zeros_like(image[:, :, :3])
         halo[:] = halo_color  # Fill with halo color
-
-        # Ensure the mask is in the range of [0, 1]
         halo_mask = halo_mask / 255.0
-
-        # Apply the halo mask to the halo image
         halo = halo.astype(float)
+
         for c in range(3):
             halo[:, :, c] = halo[:, :, c] * halo_mask
 
-        # Combine the halo with the original image
-        image_rgb = image[:, :, :3].astype(float)
-        combined_rgb = np.where(halo_mask[:, :, None] > 0, np.clip(image_rgb + halo, 0, 255), image_rgb)
-
-        # Create a new alpha channel where the halo is added to the original alpha
+        combined_rgb = np.where(halo_mask[:, :, None] > 0, np.clip(image[:, :, :3].astype(float) + halo, 0, 255), image[:, :, :3])
         new_alpha = np.clip(original_alpha + (halo_mask * 255), 0, 255).astype(np.uint8)
 
         return np.dstack((combined_rgb.astype(np.uint8), new_alpha))
 
     @staticmethod
-    def play_sound(file_path):
+    def play_sound(file_path) -> None:
         """
-        Plays a sound file.
+        Plays a sound.
 
         Args:
-            file_path (str): The path to the sound file.
+            file_path (str): Path to the sound file.
         """
         wave_obj = sa.WaveObject.from_wave_file(file_path)
         wave_obj.play()
