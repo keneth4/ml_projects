@@ -32,6 +32,7 @@ stats_background_color = (
 
 # Load counters config
 pose_estimation_config = config['pose_estimation']
+menu_config = pose_estimation_config['menu']
 curl_counter_config = pose_estimation_config['curl_counter']
 squat_counter_config = pose_estimation_config['squat_counter']
 

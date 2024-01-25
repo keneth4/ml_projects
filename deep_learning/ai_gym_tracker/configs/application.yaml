@@ -10,6 +10,9 @@ video_capture:
   finished_display_time: 7
 
 pose_estimation:
+  menu:
+    selection_hold_duration: 3  # Duration to hold hand over option for selection
+    hand_threshold: 0.9 # Threshold for hand proximity to option
   curl_counter:
     min_angle: 20
     max_angle: 150

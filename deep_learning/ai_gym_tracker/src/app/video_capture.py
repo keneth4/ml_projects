@@ -56,7 +56,7 @@ class PoseDetectorVideoCapture:
         The stats to display.
     numeric_options : Dict[str, Any]
         The numeric options to display.
-    images_and_positions : Dict[str, Any]
+    images_options : Dict[str, Any]
         The images and positions to display.
     position_calculator : TextPositionCalculator
         The text position on the image calculator.
@@ -94,7 +94,7 @@ class PoseDetectorVideoCapture:
         self.exit: bool = False
         self.stats: Dict[str, str] = None
         self.numeric_options: Dict[str, Any] = {}
-        self.images_and_positions: Dict[str, Any] = {}
+        self.images_options: Dict[str, Any] = {}
         self.position_calculator = TextPositionCalculator()
         self.text_manager = TextManager(self.position_calculator)
         self.image_drawer = ImageDrawer(self.text_manager)
@@ -128,8 +128,8 @@ class PoseDetectorVideoCapture:
         for option in self.options:
             print(f"> {option.title}")
         self.menu = ExerciseMenu(options, (self.width, self.height))
-        self.numeric_options = self.menu.get_numeric_options_positions()
-        self.images_and_positions = self.menu.get_options_images_and_positions()
+        self.images_options = self.menu.get_images_options_and_positions()
+        self.numeric_options = self.menu.get_numeric_options_and_positions()
 
     def process_result_frame(self, image: np.ndarray) -> Tuple[np.ndarray, mp_pose.PoseLandmark]:
         """
@@ -179,7 +179,7 @@ class PoseDetectorVideoCapture:
 
             # Render menu
             if self.menu.state == "start":
-                image = self.image_drawer.draw_menu_images(self.images_and_positions, image, self.menu.output.get("tentative_option_index"))
+                image = self.image_drawer.draw_menu_images(self.images_options, image, self.menu.output.get("tentative_option_index"))
             else:
                 image = self.image_drawer.draw_numeric_menu(self.numeric_options, image, self.menu.output.get("tentative_option_index"))
 
