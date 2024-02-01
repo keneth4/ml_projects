@@ -174,6 +174,10 @@ class PoseDetectorVideoCapture:
         with contextlib.suppress(Exception):
             landmarks = results.pose_landmarks
 
+            # Render detections
+            if self.show_landmarks:
+                self.image_drawer.draw_landmarks(image, landmarks)
+
             # Run menu
             self.menu.run(landmarks.landmark)
 
@@ -188,10 +192,6 @@ class PoseDetectorVideoCapture:
             if self.menu.output.get("message"):
                 self.image_drawer.draw_message_background_banner(image, self.message_banner)
             self.text_manager.draw_output_on_image(self.menu.output, image)
-
-            # Render detections
-            if self.show_landmarks:
-                self.image_drawer.draw_landmarks(image, landmarks)
 
             # Play option sound
             if self.menu.get_state_changed():
@@ -271,6 +271,10 @@ class PoseDetectorVideoCapture:
         with contextlib.suppress(Exception):
             landmarks = results.pose_landmarks
 
+            # Render detections
+            if self.show_landmarks:
+                self.image_drawer.draw_landmarks(image, landmarks)
+
             # Run pose counter and other processing logic
             self.counter.run(landmarks.landmark)
 
@@ -284,10 +288,6 @@ class PoseDetectorVideoCapture:
             if self.counter.output.get("message"):
                 self.image_drawer.draw_message_background_banner(image, self.message_banner)
             self.text_manager.draw_output_on_image(self.counter.output, image)
-
-            # Render detections if required
-            if self.show_landmarks:
-                self.image_drawer.draw_landmarks(image, landmarks)
 
         return image
 

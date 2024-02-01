@@ -6,7 +6,7 @@ mediapipe:
 video_capture:
   device: 0
   flip: true
-  show_landmarks: false
+  show_landmarks: true
   finished_display_time: 7
 
 pose_estimation:
@@ -15,7 +15,7 @@ pose_estimation:
     hand_threshold: 0.9 # Threshold for hand proximity to option
   curl_counter:
     min_angle: 20
-    max_angle: 150
+    max_angle: 170
     image_path: src/assets/bicep-curl.png
   squat_counter:
     min_angle: 130
