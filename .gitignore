@@ -1,2 +1,6 @@
-/examples/
+examples
+datasets
 venv
+
+deep_learning/MedSAM
+deep_learning/models
